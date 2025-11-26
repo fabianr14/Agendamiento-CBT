@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Acceso - CBT{% endblock %}
+
+{% block content %}
+<!-- Contenedor Flex para centrado absoluto -->
+<div class="flex flex-col items-center justify-center w-full min-h-[75vh]">
+    
+    <div class="w-full max-w-md">
+        <!-- Tarjeta Login -->
+        <div class="bg-white border border-slate-200 rounded-3xl shadow-apple p-8 relative overflow-hidden">
+            
+            <!-- Decoración de fondo sutil -->
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-brand-red/5 rounded-full blur-3xl -mt-20 pointer-events-none"></div>
+
+            <div class="text-center mb-8 relative z-10">
+                <!-- LOGO AUMENTADO: w-28 h-28 -->
+                <div class="w-28 h-28 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 p-4">
+                    <img src="{% static 'img/logo_cbt.png' %}" alt="CBT" class="w-full h-full object-contain">
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-1 tracking-tight">Bienvenido</h2>
+                <p class="text-slate-500 text-sm">Ingrese sus credenciales institucionales</p>
+            </div>
+
+            {% if form.errors %}
+            <div class="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm flex items-center gap-3 animate-pulse">
+                <i class="bi bi-exclamation-circle-fill text-lg"></i>
+                <span class="font-medium">Usuario o contraseña incorrectos.</span>
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-5 relative z-10">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Usuario / Cédula</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="bi bi-person text-slate-400 group-focus-within:text-brand-red transition-colors"></i>
+                        </div>
+                        <input type="text" name="username" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl block pl-11 p-3.5 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all placeholder-slate-400" placeholder="Ingrese su ID" required autofocus autocomplete="off">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Contraseña</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="bi bi-key text-slate-400 group-focus-within:text-brand-red transition-colors"></i>
+                        </div>
+                        <input type="password" name="password" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl block pl-11 p-3.5 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all placeholder-slate-400" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-brand-red hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                    <span>Iniciar Sesión</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="text-center mt-8 space-y-4">
+            <p class="text-xs text-slate-400">
+                <i class="bi bi-shield-lock-fill mr-1"></i> Acceso Seguro SSL
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

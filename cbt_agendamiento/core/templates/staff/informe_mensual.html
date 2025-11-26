@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Informe de Gestión - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- ========================================== -->
+    <!-- BARRA DE HERRAMIENTAS (Solo Pantalla) -->
+    <!-- ========================================== -->
+    <div class="d-print-none mb-8">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+            <div>
+                <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-1">Gestión Documental</h6>
+                <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Generador de Informes</h2>
+            </div>
+            <!-- Botón Retorno -->
+            <a href="{% url 'dashboard_staff' %}" class="text-slate-500 hover:text-slate-800 text-sm font-medium flex items-center gap-1 transition-colors">
+                <i class="bi bi-arrow-left"></i> Volver al Panel
+            </a>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-apple">
+            <form method="GET" class="flex flex-col gap-4" id="reportForm">
+                
+                <!-- Fila 1: Tipo y Año -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    
+                    <!-- Tipo de Reporte -->
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Tipo de Informe</label>
+                        <div class="relative">
+                            <i class="bi bi-filter-square absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <select name="tipo_reporte" id="tipoReporte" onchange="toggleMes()" class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none appearance-none font-bold cursor-pointer">
+                                <option value="mensual" {% if tipo_reporte == 'mensual' %}selected{% endif %}>Mensual (Detallado)</option>
+                                <option value="ytd" {% if tipo_reporte == 'ytd' %}selected{% endif %}>Acumulado (Hasta hoy)</option>
+                                <option value="anual" {% if tipo_reporte == 'anual' %}selected{% endif %}>Anual Completo</option>
+                            </select>
+                            <i class="bi bi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <!-- Año -->
+                    <div class="w-full sm:w-40">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Año Fiscal</label>
+                        <div class="relative">
+                            <select name="anio" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none appearance-none font-mono font-bold text-center cursor-pointer">
+                                {% for a in rango_anios %}
+                                    <option value="{{ a }}" {% if a == anio %}selected{% endif %}>{{ a }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="bi bi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <!-- Mes (Condicional) -->
+                    <div class="flex-1 transition-all duration-300" id="divMes">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Mes Específico</label>
+                        <div class="relative">
+                            <i class="bi bi-calendar-month absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <select name="mes" class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none appearance-none cursor-pointer font-medium">
+                                <option value="1" {% if mes == 1 %}selected{% endif %}>Enero</option>
+                                <option value="2" {% if mes == 2 %}selected{% endif %}>Febrero</option>
+                                <option value="3" {% if mes == 3 %}selected{% endif %}>Marzo</option>
+                                <option value="4" {% if mes == 4 %}selected{% endif %}>Abril</option>
+                                <option value="5" {% if mes == 5 %}selected{% endif %}>Mayo</option>
+                                <option value="6" {% if mes == 6 %}selected{% endif %}>Junio</option>
+                                <option value="7" {% if mes == 7 %}selected{% endif %}>Julio</option>
+                                <option value="8" {% if mes == 8 %}selected{% endif %}>Agosto</option>
+                                <option value="9" {% if mes == 9 %}selected{% endif %}>Septiembre</option>
+                                <option value="10" {% if mes == 10 %}selected{% endif %}>Octubre</option>
+                                <option value="11" {% if mes == 11 %}selected{% endif %}>Noviembre</option>
+                                <option value="12" {% if mes == 12 %}selected{% endif %}>Diciembre</option>
+                            </select>
+                            <i class="bi bi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fila 2: Acciones -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 mt-2">
+                    <button type="submit" class="flex-1 sm:flex-none px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-slate-900/20 flex items-center justify-center gap-2">
+                        <i class="bi bi-arrow-clockwise"></i> Generar Vista Previa
+                    </button>
+                    
+                    <div class="flex-1 flex gap-2">
+                        <!-- Botón Imprimir: Activa modo impresión (carga todo) -->
+                        <button type="button" onclick="activarModoImpresion()" class="flex-1 px-4 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center gap-2">
+                            <i class="bi bi-printer-fill text-slate-400"></i> <span class="hidden sm:inline">Imprimir PDF</span>
+                        </button>
+                        
+                        <!-- Botón Excel -->
+                        <button type="submit" formaction="{% url 'exportar_excel_mensual' %}" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-emerald-100 flex items-center justify-center gap-2">
+                            <i class="bi bi-file-earmark-excel-fill"></i> <span class="hidden sm:inline">Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input oculto para activar modo impresión -->
+                <input type="hidden" name="print_mode" id="printModeInput" value="0">
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VISTA PREVIA DEL DOCUMENTO (Papel A4) -->
+    <!-- ========================================== -->
+    <!-- NOTA: Removemos 'overflow-hidden' para permitir paginación en impresión -->
+    <div class="bg-white text-slate-900 shadow-2xl mx-auto print-sheet relative border border-slate-200/50 transition-all mb-8">
+        
+        <!-- Marca de Agua -->
+        <div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none z-0">
+            <img src="{% static 'img/logo_cbt.png' %}" alt="Watermark" class="w-96 grayscale">
+        </div>
+
+        <!-- ENCABEZADO DEL REPORTE -->
+        <div class="relative z-10 mb-6 border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row items-center sm:items-start justify-between text-center sm:text-left gap-4">
+            <div class="flex items-center gap-4">
+                <img src="{% static 'img/logo_cbt.png' %}" alt="Logo" class="w-14 h-auto print-logo">
+                <div>
+                    <h2 class="text-lg font-black uppercase tracking-tight leading-none mb-1">Cuerpo de Bomberos</h2>
+                    <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Tulcán - Carchi</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Unidad de Prevención e Ingeniería del Fuego</p>
+                </div>
+            </div>
+            <div class="sm:text-right">
+                <h3 class="text-base font-bold uppercase text-slate-800 bg-slate-100 px-2 py-1 rounded inline-block mb-1">
+                    INFORME DE INSPECCIONES
+                </h3>
+                <p class="text-xs font-medium text-slate-600 block">
+                    Periodo: <span class="font-bold text-slate-900 uppercase">{{ titulo_periodo }}</span>
+                </p>
+                <p class="text-[9px] text-slate-400 mt-1 font-mono">Generado: {% now "d/m/Y H:i" %}</p>
+            </div>
+        </div>
+
+        <!-- TABLA DE DATOS (Responsive en Web, Fija en Print) -->
+        <div class="relative z-10 mb-8">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+                <!-- THEAD se repite en cada hoja al imprimir -->
+                <thead>
+                    <tr class="border-b-2 border-slate-800 text-[10px] uppercase tracking-wider font-bold">
+                        <th class="py-2 text-slate-900 w-8 text-center">#</th>
+                        <th class="py-2 text-slate-900 w-20">Fecha</th>
+                        <th class="py-2 text-slate-900 w-24 text-center">Formulario</th>
+                        <th class="py-2 text-slate-900">Establecimiento / Dirección</th>
+                        <th class="py-2 text-slate-900 w-28">RUC</th>
+                        <th class="py-2 text-slate-900 w-32 text-right">Inspector</th>
+                    </tr>
+                </thead>
+                <tbody class="text-[11px] text-slate-700">
+                    {% for turno in turnos %}
+                    <!-- Page break inside avoid evita cortar filas a la mitad -->
+                    <tr class="border-b border-slate-200 page-break-inside-avoid">
+                        <td class="py-2 text-center font-mono text-slate-400">{{ forloop.counter }}</td>
+                        <td class="py-2 font-medium whitespace-nowrap">{{ turno.agenda.fecha|date:"d/m/Y" }}</td>
+                        <td class="py-2 font-mono font-bold text-slate-900 text-center bg-slate-50">{{ turno.numero_formulario|default:"--" }}</td>
+                        <td class="py-2 pr-2">
+                            <div class="font-bold text-slate-900 truncate max-w-[200px]">{{ turno.establecimiento.nombre_comercial }}</div>
+                            <div class="text-[9px] text-slate-500 uppercase truncate max-w-[200px] mt-0.5">{{ turno.establecimiento.direccion }}</div>
+                        </td>
+                        <td class="py-2 font-mono text-[10px]">{{ turno.establecimiento.propietario.perfil.ruc }}</td>
+                        <td class="py-2 text-right text-slate-500 truncate max-w-[120px]">
+                            {{ turno.inspector.first_name|slice:":1" }}. {{ turno.inspector.last_name }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-12 text-center text-slate-400 italic bg-slate-50 rounded-lg mt-2">
+                            No se encontraron registros para este periodo.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RESUMEN FINAL (No romper) -->
+        <div class="relative z-10 bg-slate-50 border-t-2 border-slate-800 p-4 mb-12 page-break-inside-avoid flex justify-between items-center rounded-b-lg">
+            <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">Total Inspecciones Finalizadas</span>
+            <span class="text-lg font-black text-slate-900">{{ total }}</span>
+        </div>
+
+        <!-- FIRMAS (Evitar cortar a la mitad) -->
+        <div class="relative z-10 grid grid-cols-2 gap-16 mt-auto pt-12 page-break-inside-avoid pb-4">
+            <div class="text-center">
+                <div class="border-t border-slate-800 w-40 mx-auto mb-2"></div>
+                <p class="text-[10px] font-bold uppercase">Responsable de Prevención</p>
+            </div>
+            <div class="text-center">
+                <div class="border-t border-slate-800 w-40 mx-auto mb-2"></div>
+                <p class="text-[10px] font-bold uppercase">Comandancia</p>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- CONTROLES DE PAGINACIÓN (Solo Pantalla) -->
+    {% if not print_mode and turnos.has_other_pages %}
+    <div class="d-print-none flex justify-center pb-12">
+        <div class="bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex items-center gap-1">
+            {% if turnos.has_previous %}
+                <a href="?page={{ turnos.previous_page_number }}&tipo_reporte={{ tipo_reporte }}&mes={{ mes }}&anio={{ anio }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"><i class="bi bi-chevron-left"></i></a>
+            {% else %}
+                <span class="w-8 h-8 flex items-center justify-center text-slate-300"><i class="bi bi-chevron-left"></i></span>
+            {% endif %}
+            
+            <span class="px-3 text-xs font-bold text-slate-600">Página {{ turnos.number }} de {{ turnos.paginator.num_pages }}</span>
+            
+            {% if turnos.has_next %}
+                <a href="?page={{ turnos.next_page_number }}&tipo_reporte={{ tipo_reporte }}&mes={{ mes }}&anio={{ anio }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"><i class="bi bi-chevron-right"></i></a>
+            {% else %}
+                <span class="w-8 h-8 flex items-center justify-center text-slate-300"><i class="bi bi-chevron-right"></i></span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+
+<script>
+    // Control de visibilidad del selector de Mes
+    function toggleMes() {
+        const tipo = document.getElementById('tipoReporte').value;
+        const divMes = document.getElementById('divMes');
+        if (tipo === 'mensual') {
+            divMes.classList.remove('hidden', 'opacity-0');
+            divMes.classList.add('flex-1');
+        } else {
+            divMes.classList.add('hidden', 'opacity-0');
+            divMes.classList.remove('flex-1');
+        }
+    }
+
+    // Iniciar estado correcto al cargar
+    document.addEventListener('DOMContentLoaded', toggleMes);
+
+    // Función para imprimir TODO
+    function activarModoImpresion() {
+        // Setear flag para pedir todos los datos sin paginar
+        document.getElementById('printModeInput').value = "1";
+        // Enviar formulario
+        document.getElementById('reportForm').submit();
+    }
+
+    // Si la página cargó en modo impresión (detectado por parámetro URL o variable template)
+    {% if print_mode %}
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+                // Opcional: Restaurar a modo normal después de imprimir
+                // window.location.href = window.location.href.replace('print_mode=1', 'print_mode=0');
+            }, 500);
+        };
+    {% endif %}
+</script>
+
+<style>
+    /* SIMULACIÓN DE HOJA A4 */
+    .print-sheet {
+        width: 100%;
+        max-width: 21cm;
+        min-height: 29.7cm;
+        padding: 2cm;
+        margin: 0 auto;
+        border-radius: 2px;
+        /* Permitimos overflow para que en pantalla se vea scroll si es necesario, pero en print es visible */
+        overflow: auto; 
+    }
+
+    /* REGLAS DE IMPRESIÓN */
+    @media print {
+        @page { 
+            margin: 1cm; /* Margen físico del navegador */
+            size: A4 portrait; 
+        }
+        
+        body { 
+            background-color: white !important; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+            font-family: serif !important; 
+            height: auto !important;
+            overflow: visible !important;
+        }
+        
+        /* Ocultar elementos de UI */
+        nav, footer, .d-print-none, #global-loader { display: none !important; }
+        
+        .print-sheet {
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important; /* Padding interno ya no necesario si usamos margin de página */
+            border: none !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important; /* CLAVE: Permitir que el contenido fluya a la hoja 2 */
+            position: static !important;
+        }
+        
+        /* Tabla para imprimir */
+        table { width: 100% !important; border-collapse: collapse; }
+        
+        /* Repetir cabecera en cada hoja */
+        thead { display: table-header-group; }
+        
+        /* Evitar cortar filas */
+        tr { page-break-inside: avoid; }
+        
+        th, td { border-bottom: 1px solid #000 !important; padding: 4px 0 !important; color: #000 !important; }
+        
+        .page-break-inside-avoid { page-break-inside: avoid; }
+        .text-slate-400, .text-slate-500 { color: #444 !important; }
+        
+        /* Ocultar scrollbars */
+        ::-webkit-scrollbar { display: none; }
+    }
+</style>
+{% endblock %}

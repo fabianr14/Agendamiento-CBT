@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}Directorio Maestro - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 border-b border-slate-200 pb-6">
+        <div>
+            <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-0.5">Base de Datos</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Directorio de Establecimientos</h2>
+        </div>
+        <a href="{% url 'alta_contribuyente' %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-red hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5">
+            <i class="bi bi-plus-lg"></i> <span>Nuevo Registro</span>
+        </a>
+    </div>
+
+    <!-- BARRA DE FILTROS -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-6 mb-8">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+            
+            <!-- Buscador General -->
+            <div class="md:col-span-6 lg:col-span-7">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Búsqueda General</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" 
+                           class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all placeholder-slate-400" 
+                           placeholder="RUC, Nombre Comercial, Propietario..." 
+                           value="{{ query }}">
+                </div>
+            </div>
+            
+            <!-- Filtro de Giro -->
+            <div class="md:col-span-4 lg:col-span-3">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Filtrar por Giro</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-funnel"></i></span>
+                    <select name="tipo" class="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none appearance-none transition-all cursor-pointer">
+                        <option value="">-- Todos los Giros --</option>
+                        {% for t in tipos %}
+                        <option value="{{ t.id }}" {% if filtro_tipo == t.id %}selected{% endif %}>{{ t.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <i class="bi bi-chevron-down absolute right-3 top-3 text-slate-400 text-xs pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Botón Filtrar -->
+            <div class="md:col-span-2 lg:col-span-2">
+                <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl shadow-sm transition-colors text-sm">
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TABLA DE RESULTADOS -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden flex flex-col h-[700px]">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center sticky top-0 z-20 backdrop-blur-md">
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                <i class="bi bi-list-ul text-blue-500"></i> Registros Encontrados
+            </h3>
+            <span class="bg-white border border-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">Total: {{ locales.paginator.count }}</span>
+        </div>
+
+        <div class="overflow-y-auto flex-1 custom-scrollbar">
+            <table class="w-full text-left text-sm responsive-table">
+                <!-- HEADER OCULTO EN MÓVIL -->
+                <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold border-b border-slate-200 sticky top-0 z-10 hidden md:table-header-group shadow-sm">
+                    <tr>
+                        <th class="px-6 py-3 whitespace-nowrap">Nombre Comercial</th>
+                        <th class="px-6 py-3 whitespace-nowrap">Identificación</th>
+                        <th class="px-6 py-3 whitespace-nowrap">Zona / Ubicación</th>
+                        <th class="px-6 py-3 whitespace-nowrap">Giro</th>
+                        <th class="px-6 py-3 text-right">Gestión</th>
+                    </tr>
+                </thead>
+                
+                <!-- CUERPO RESPONSIVE -->
+                <tbody class="divide-y divide-slate-100 block md:table-row-group space-y-4 md:space-y-0 p-4 md:p-0">
+                    {% for local in locales %}
+                    <!-- Fila adaptable: Block en móvil, Table-row en Desktop -->
+                    <tr class="hover:bg-slate-50 transition-colors group block md:table-row bg-white rounded-xl border border-slate-100 md:border-none shadow-sm md:shadow-none p-4 md:p-0 relative">
+                        
+                        <!-- NOMBRE -->
+                        <td class="px-6 py-2 md:py-4 block md:table-cell">
+                            <div class="font-bold text-slate-900 text-base">{{ local.nombre_comercial }}</div>
+                            <div class="text-xs text-slate-500 mt-0.5 font-medium">{{ local.razon_social|truncatechars:30 }}</div>
+                        </td>
+
+                        <!-- ID -->
+                        <td class="px-6 py-2 md:py-4 block md:table-cell">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-600">{{ local.propietario.perfil.ruc }}</span>
+                            </div>
+                            <div class="text-xs text-slate-500 flex items-center gap-1">
+                                <i class="bi bi-person"></i> {{ local.propietario.first_name }}
+                            </div>
+                        </td>
+
+                        <!-- ZONA -->
+                        <td class="px-6 py-2 md:py-4 block md:table-cell">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 mb-1">
+                                {{ local.get_parroquia_display|slice:":15" }}
+                            </span>
+                            <div class="text-xs text-slate-400 truncate max-w-[180px]" title="{{ local.direccion }}">
+                                <i class="bi bi-geo-alt mr-0.5"></i> {{ local.direccion }}
+                            </div>
+                        </td>
+
+                        <!-- GIRO -->
+                        <td class="px-6 py-2 md:py-4 block md:table-cell">
+                            <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-slate-50 text-slate-600 border border-slate-200">
+                                {{ local.tipo.nombre }}
+                            </span>
+                        </td>
+
+                        <!-- ACCIONES -->
+                        <td class="px-6 py-4 text-right block md:table-cell border-t md:border-t-0 border-slate-50 mt-2 md:mt-0 pt-3 md:pt-4">
+                            <a href="{% url 'detalle_establecimiento' local.id %}" class="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:border-brand-red hover:text-brand-red hover:bg-red-50 transition-all text-xs font-bold shadow-sm group/btn">
+                                <i class="bi bi-eye"></i> <span>Detalles</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center block md:table-cell">
+                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <i class="bi bi-search text-3xl"></i>
+                            </div>
+                            <h3 class="text-slate-800 font-bold mb-1">Sin resultados</h3>
+                            <p class="text-slate-500 text-sm">Intente ajustar los filtros de búsqueda.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CONTROLES DE PAGINACIÓN -->
+        {% if locales.has_other_pages %}
+        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span class="text-xs text-slate-500 font-medium">
+                Página <strong>{{ locales.number }}</strong> de <strong>{{ locales.paginator.num_pages }}</strong>
+            </span>
+            
+            <div class="flex gap-2">
+                {% if locales.has_previous %}
+                <a href="?page={{ locales.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}" 
+                   class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-brand-red transition-colors shadow-sm">
+                    <i class="bi bi-chevron-left mr-1"></i> Anterior
+                </a>
+                {% else %}
+                <button disabled class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold text-slate-300 cursor-not-allowed">
+                    <i class="bi bi-chevron-left mr-1"></i> Anterior
+                </button>
+                {% endif %}
+                
+                {% if locales.has_next %}
+                <a href="?page={{ locales.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}" 
+                   class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-brand-red transition-colors shadow-sm">
+                    Siguiente <i class="bi bi-chevron-right ml-1"></i>
+                </a>
+                {% else %}
+                <button disabled class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold text-slate-300 cursor-not-allowed">
+                    Siguiente <i class="bi bi-chevron-right ml-1"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

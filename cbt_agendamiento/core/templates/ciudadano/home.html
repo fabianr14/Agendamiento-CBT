@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Mi Portal - CBT{% endblock %}
+
+{% block content %}
+
+<!-- 1. ENCABEZADO (Limpio) -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 border-b border-slate-200 pb-6 relative">
+    <div class="flex items-center gap-5">
+        <!-- Avatar 3D -->
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-b from-slate-700 to-slate-900 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-slate-500/20 border-t border-white/20">
+            {{ user.first_name|first }}
+        </div>
+        <div>
+            <h6 class="text-brand-red font-bold text-xs uppercase tracking-widest mb-1 flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-red animate-pulse"></span> Portal Ciudadano
+            </h6>
+            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Hola, {{ user.first_name }}</h1>
+        </div>
+    </div>
+    
+    <!-- Fecha Glass -->
+    <div class="flex items-center gap-3 bg-white/60 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-slate-200/60 shadow-sm text-slate-600">
+        <i class="bi bi-calendar4-week text-brand-red text-lg"></i>
+        <span class="text-sm font-bold">{% now "l d, F Y" %}</span>
+    </div>
+</div>
+
+<!-- 2. KPIs (Estilo iOS Widgets) -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+    
+    <!-- Card 1: Mis Locales -->
+    <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-apple hover:shadow-apple-hover hover:-translate-y-1 transition-all group relative overflow-hidden cursor-default">
+        <div class="relative z-10 flex justify-between items-start">
+            <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Propiedades</p>
+                <h3 class="text-4xl font-black text-slate-800 tracking-tight">{{ locales|length }}</h3>
+                <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mt-2 inline-block border border-blue-100">Activos</span>
+            </div>
+            <!-- Icono 3D Azul -->
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-b from-blue-400 to-blue-600 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white text-xl border-t border-white/20 group-hover:scale-110 transition-transform duration-300">
+                <i class="bi bi-shop"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: En Trámite -->
+    <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-apple hover:shadow-apple-hover hover:-translate-y-1 transition-all group relative overflow-hidden cursor-default">
+        <div class="relative z-10 flex justify-between items-start">
+            <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">En Proceso</p>
+                <h3 class="text-4xl font-black text-slate-800 tracking-tight">{{ turnos_activos|length }}</h3>
+                {% if turnos_activos %}
+                <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md mt-2 inline-block border border-amber-100 animate-pulse">En Revisión</span>
+                {% else %}
+                <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md mt-2 inline-block border border-slate-100">Sin pendientes</span>
+                {% endif %}
+            </div>
+            <!-- Icono 3D Ámbar -->
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-b from-amber-400 to-amber-600 shadow-lg shadow-amber-500/30 flex items-center justify-center text-white text-xl border-t border-white/20 group-hover:scale-110 transition-transform duration-300">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Historial -->
+    <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-apple hover:shadow-apple-hover hover:-translate-y-1 transition-all group relative overflow-hidden cursor-default">
+        <div class="relative z-10 flex justify-between items-start">
+            <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Finalizados</p>
+                <h3 class="text-4xl font-black text-slate-800 tracking-tight">{{ historial|length }}</h3>
+                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md mt-2 inline-block border border-emerald-100">Histórico</span>
+            </div>
+            <!-- Icono 3D Esmeralda -->
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/30 flex items-center justify-center text-white text-xl border-t border-white/20 group-hover:scale-110 transition-transform duration-300">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. GRID PRINCIPAL -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- COLUMNA 1: MIS LOCALES (Navegación) -->
+    <div class="lg:col-span-4 space-y-6">
+        <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[600px]">
+            <!-- Header sin sticky -->
+            <div class="px-6 py-5 border-b border-slate-100 bg-white flex justify-between items-center">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                    <i class="bi bi-shop text-blue-500"></i> Mis Locales
+                </h3>
+                <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-slate-200">{{ locales|length }}</span>
+            </div>
+
+            <div class="p-4 overflow-y-auto flex-1 space-y-4 custom-scrollbar bg-slate-50/30">
+                {% for local in locales %}
+                <div class="group relative bg-white border border-slate-200 rounded-2xl p-5 hover:border-brand-red/40 transition-all shadow-sm hover:shadow-md hover:-translate-y-1">
+                    
+                    <!-- Estado Mapa -->
+                    {% if not local.ubicacion_verificada %}
+                    <div class="absolute top-4 right-4" title="Ubicación Pendiente">
+                        <span class="relative flex h-2.5 w-2.5">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-200 shadow-inner">
+                            <i class="bi bi-shop text-xl"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h4 class="font-bold text-slate-800 text-sm leading-tight truncate pr-4 mb-1" title="{{ local.nombre_comercial }}">{{ local.nombre_comercial }}</h4>
+                            <span class="text-[10px] font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-200 text-slate-500">{{ local.ruc }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-5">
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-slate-50 text-slate-500 border border-slate-100 flex items-center gap-1">
+                            <i class="bi bi-tag-fill text-slate-300"></i> {{ local.tipo.nombre|truncatechars:15 }}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="{% url 'agendar_turno' %}?local_id={{ local.id }}" class="flex items-center justify-center gap-1.5 col-span-1 bg-slate-900 hover:bg-brand-red text-white text-[11px] font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-slate-900/10 transform active:scale-95">
+                            <i class="bi bi-calendar-plus"></i> Solicitar
+                        </a>
+                        <a href="{% url 'detalle_local_ciudadano' local.id %}" class="flex items-center justify-center gap-1.5 col-span-1 bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 text-[11px] font-bold py-2.5 rounded-xl transition-colors">
+                            <i class="bi bi-file-text"></i> Ficha
+                        </a>
+                    </div>
+                    
+                    {% if not local.ubicacion_verificada %}
+                    <a href="{% url 'verificar_ubicacion' local.id %}" class="mt-3 block text-center text-[10px] text-amber-600 hover:text-amber-700 font-bold bg-amber-50 py-2 rounded-lg border border-amber-100 transition-colors">
+                        <i class="bi bi-geo-alt-fill mr-1"></i> Completar Mapa Obligatorio
+                    </a>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="flex flex-col items-center justify-center h-full text-center p-8 opacity-60">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-300 border border-slate-200">
+                        <i class="bi bi-shop-window text-4xl"></i>
+                    </div>
+                    <h5 class="text-slate-700 font-bold text-sm">Sin Propiedades</h5>
+                    <p class="text-slate-400 text-xs mt-2 max-w-[200px] leading-relaxed">No tienes locales registrados. Acude a ventanilla para registrar tu primer establecimiento.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMNA 2: GESTIÓN CENTRAL (lg:col-span-5) -->
+    <div class="lg:col-span-5 space-y-6">
+        
+        <!-- PESTAÑAS ESTILO IOS (Sin sticky) -->
+        <div class="bg-slate-100 p-1 rounded-2xl border border-slate-200/60 shadow-inner flex w-full">
+            <button onclick="switchTab('activos')" id="tab-activos" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-800 bg-white shadow-sm flex items-center justify-center gap-2">
+                En Curso {% if turnos_activos %}<span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full shadow-sm">{{ turnos_activos|length }}</span>{% endif %}
+            </button>
+            <button onclick="switchTab('historial')" id="tab-historial" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-500 hover:text-slate-700 flex items-center justify-center gap-2">
+                Historial
+            </button>
+        </div>
+
+        <div class="tab-content relative min-h-[400px]">
+            
+            <!-- PESTAÑA 1: ACTIVOS (Tickets de Progreso) -->
+            <div id="content-activos" class="space-y-5 transition-opacity duration-300">
+                {% if turnos_activos %}
+                    {% for turno in turnos_activos %}
+                    <div class="bg-white border border-slate-200 rounded-3xl shadow-apple overflow-hidden flex flex-col sm:flex-row hover:shadow-lg transition-all group relative cursor-default">
+                        <!-- Banda Estado -->
+                        <div class="absolute left-0 top-0 bottom-0 w-1.5 {% if turno.estado == 'CONFIRMADO' %}bg-emerald-500{% else %}bg-amber-400{% endif %}"></div>
+
+                        <!-- Fecha -->
+                        <div class="bg-slate-50 border-b sm:border-b-0 sm:border-r border-slate-100 p-5 flex flex-col items-center justify-center min-w-[110px] text-center group-hover:bg-slate-100/80 transition-colors">
+                            <span class="text-3xl font-black text-slate-800 leading-none tracking-tighter">{{ turno.agenda.fecha|date:"d" }}</span>
+                            <span class="text-[10px] font-bold text-brand-red uppercase mt-1 tracking-widest">{{ turno.agenda.fecha|date:"M" }}</span>
+                            <span class="mt-2 text-[10px] text-slate-400 font-mono bg-white px-2 py-0.5 rounded border border-slate-200">{{ turno.agenda.fecha|date:"Y" }}</span>
+                        </div>
+                        
+                        <!-- Info -->
+                        <div class="p-5 flex-1 flex flex-col justify-center">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h5 class="font-bold text-slate-800 text-sm">{{ turno.establecimiento.nombre_comercial }}</h5>
+                                    <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
+                                        <span class="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded border border-slate-100 flex items-center gap-1">
+                                            <i class="bi bi-clock text-amber-500"></i> {{ turno.get_bloque_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Badge -->
+                                {% if turno.estado == 'PENDIENTE' %}
+                                    <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-100 flex items-center gap-1 shadow-sm">
+                                        <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Revisión
+                                    </span>
+                                {% elif turno.estado == 'CONFIRMADO' %}
+                                    <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100 flex items-center gap-1 shadow-sm">
+                                        <i class="bi bi-check-circle-fill text-emerald-500"></i> Aprobado
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Progreso Visual -->
+                            <div class="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden border border-slate-100 relative">
+                                <div class="absolute top-0 left-0 h-full bg-white/30 w-full z-10 animate-[shimmer_2s_infinite]"></div>
+                                <div class="h-full rounded-full transition-all duration-1000 relative 
+                                    {% if turno.estado == 'CONFIRMADO' %}bg-gradient-to-r from-emerald-400 to-emerald-600 w-full{% else %}bg-gradient-to-r from-amber-300 to-amber-500 w-1/2{% endif %}">
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between items-center mt-2 text-[10px]">
+                                <span class="text-slate-400 font-medium">Progreso</span>
+                                <span class="font-bold {% if turno.estado == 'CONFIRMADO' %}text-emerald-600{% else %}text-amber-600{% endif %}">
+                                    {% if turno.estado == 'CONFIRMADO' %}100%{% else %}50%{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center">
+                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                            <i class="bi bi-calendar-check text-3xl"></i>
+                        </div>
+                        <h5 class="text-slate-700 font-bold text-sm">Bandeja al día</h5>
+                        <p class="text-slate-400 text-xs mt-1">No tienes inspecciones en curso.</p>
+                        <p class="text-slate-400 text-[10px] mt-4">Selecciona un local a la izquierda para iniciar.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- PESTAÑA 2: HISTORIAL -->
+            <div id="content-historial" class="hidden transition-opacity duration-300">
+                <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-apple">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase font-bold">
+                                <tr>
+                                    <th class="px-5 py-3">Fecha</th>
+                                    <th class="px-5 py-3">Local</th>
+                                    <th class="px-5 py-3 text-right">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                {% for turno in historial %}
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-5 py-3 font-medium text-slate-700">{{ turno.agenda.fecha|date:"d/m/y" }}</td>
+                                    <td class="px-5 py-3 text-slate-600 truncate max-w-[120px]">
+                                        {{ turno.establecimiento.nombre_comercial }}
+                                        {% if turno.numero_formulario %}
+                                            <div class="text-[9px] text-slate-400 mt-0.5 font-mono">Form: {{ turno.numero_formulario }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-5 py-3 text-right">
+                                        {% if turno.estado == 'RECHAZADO' %}
+                                            <span class="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-100 text-[9px]">RECHAZADO</span>
+                                        {% elif turno.estado == 'CANCELADO' %}
+                                            <span class="text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 text-[9px]">CANCELADO</span>
+                                        {% elif turno.estado == 'TERMINADO' %}
+                                            <span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 text-[9px]">FINALIZADO</span>
+                                        {% elif turno.estado == 'NO_REALIZADA' %}
+                                            <span class="text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-[9px]">AUSENTE</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="px-5 py-12 text-center text-slate-400 text-xs">Sin historial.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMNA 3: INFORMACIÓN Y DOCUMENTOS (lg:col-span-3) -->
+    <div class="lg:col-span-3 space-y-6">
+        
+        <!-- DOCUMENTACIÓN (Botones Grandes) -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-apple">
+            <h6 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <i class="bi bi-file-earmark-text text-blue-500"></i> Documentación
+            </h6>
+            <div class="space-y-3">
+                <a href="{% url 'ver_tasas_impuestos' %}" target="_blank" class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-red-200 hover:bg-red-50 transition-all group cursor-pointer">
+                    <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-red-500 shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-700 group-hover:text-red-700">Cuadro Tarifario</div>
+                        <div class="text-[10px] text-slate-400 group-hover:text-red-400">Valores Oficiales</div>
+                    </div>
+                    <i class="bi bi-box-arrow-up-right ml-auto text-slate-300 group-hover:text-red-400 text-xs"></i>
+                </a>
+
+                <a href="{% url 'ver_guia_requisitos' %}" target="_blank" class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-all group cursor-pointer">
+                    <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-700 group-hover:text-blue-700">Guía Requisitos</div>
+                        <div class="text-[10px] text-slate-400 group-hover:text-blue-400">Normativa</div>
+                    </div>
+                    <i class="bi bi-box-arrow-up-right ml-auto text-slate-300 group-hover:text-blue-400 text-xs"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- TARJETA DE CONTACTO (BLANCA Y LIMPIA) -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-apple text-center relative overflow-hidden group">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brand-red to-red-700"></div>
+            
+            <div class="relative z-10">
+                <div class="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm p-2 group-hover:scale-105 transition-transform duration-300">
+                    <img src="{% static 'img/logo_cbt.png' %}" alt="CBT" class="w-full h-full object-contain opacity-90">
+                </div>
+                <h5 class="font-bold text-slate-900 text-base">Cuerpo de Bomberos</h5>
+                <small class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Tulcán</small>
+                
+                <div class="mt-6 space-y-3 text-left">
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-emerald-200 transition-colors">
+                        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-telephone-fill text-xs"></i></div>
+                        <div>
+                            <div class="text-[9px] text-slate-400 uppercase font-bold">Central</div>
+                            <div class="text-xs font-bold text-slate-700">(06) 298-0000</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors">
+                        <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0"><i class="bi bi-envelope-fill text-xs"></i></div>
+                        <div>
+                            <div class="text-[9px] text-slate-400 uppercase font-bold">Email</div>
+                            <div class="text-xs font-bold text-slate-700">info@cbt.gob.ec</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Redes Sociales -->
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Síguenos</p>
+                    <div class="flex justify-center gap-2">
+                        <a href="https://facebook.com" target="_blank" class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] flex items-center justify-center transition-all hover:-translate-y-1 shadow-sm" title="Facebook"><i class="bi bi-facebook"></i></a>
+                        <a href="https://twitter.com" target="_blank" class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all hover:-translate-y-1 shadow-sm" title="X"><i class="bi bi-twitter-x"></i></a>
+                        <a href="https://instagram.com" target="_blank" class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 hover:text-white flex items-center justify-center transition-all hover:-translate-y-1 shadow-sm" style="background: linear-gradient(45deg, transparent, transparent); hover:background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);"><i class="bi bi-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMERGENCIA -->
+        <div class="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-4 text-center text-white shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-transform">
+            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-20 h-20 bg-white/10 rounded-full blur-xl transition-colors"></div>
+            <div class="relative z-10">
+                <div class="text-red-100 text-[9px] font-bold uppercase tracking-widest mb-0.5">Emergencias</div>
+                <div class="text-4xl font-black tracking-tighter leading-none">9-1-1</div>
+                <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-black/20 rounded-full text-[10px] backdrop-blur-sm border border-white/10">
+                    <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span> 24/7 Activo
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+</style>
+
+<script>
+    function switchTab(tabName) {
+        const btnActivos = document.getElementById('tab-activos');
+        const btnHistorial = document.getElementById('tab-historial');
+        const contentActivos = document.getElementById('content-activos');
+        const contentHistorial = document.getElementById('content-historial');
+
+        if (tabName === 'activos') {
+            btnActivos.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-white bg-slate-900 shadow-md flex items-center justify-center gap-2";
+            btnHistorial.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2";
+            contentActivos.classList.remove('hidden');
+            contentHistorial.classList.add('hidden');
+        } else {
+            btnHistorial.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-white bg-slate-900 shadow-md flex items-center justify-center gap-2";
+            btnActivos.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2";
+            contentHistorial.classList.remove('hidden');
+            contentActivos.classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

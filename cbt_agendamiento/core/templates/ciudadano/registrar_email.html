@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Registro de Contacto - CBT{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center px-4">
+    
+    <div class="w-full max-w-lg">
+        <!-- Tarjeta Principal -->
+        <div class="bg-white border border-slate-200 rounded-3xl shadow-apple p-8 md:p-10 relative overflow-hidden">
+            
+            <!-- Decoración Fondo -->
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brand-red to-red-600"></div>
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-red-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+
+            <!-- Encabezado -->
+            <div class="text-center mb-8 relative z-10">
+                <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 text-brand-red border border-red-100 shadow-sm">
+                    <i class="bi bi-envelope-exclamation-fill text-3xl"></i>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-slate-900 mb-1 tracking-tight">Configuración Inicial</h2>
+                <p class="text-slate-500 text-sm font-medium">Paso 1 de 2: Canal de Comunicación</p>
+            </div>
+
+            <!-- Alerta Informativa -->
+            <div class="mb-8 bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-start gap-4">
+                <div class="bg-white p-1.5 rounded-full text-amber-500 shadow-sm shrink-0">
+                    <i class="bi bi-info-lg"></i>
+                </div>
+                <div class="text-left">
+                    <h6 class="text-xs font-bold text-amber-800 uppercase tracking-wide mb-1">¿Por qué necesitamos esto?</h6>
+                    <p class="text-xs text-amber-700 leading-relaxed">
+                        El Cuerpo de Bomberos enviará a esta dirección la confirmación de su turno, alertas de inspección y el certificado digital final. Es vital para el proceso.
+                    </p>
+                </div>
+            </div>
+
+            <form method="POST" class="space-y-6 relative z-10">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Correo Electrónico Personal</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="bi bi-envelope text-slate-400 group-focus-within:text-brand-red transition-colors text-lg"></i>
+                        </div>
+                        <input type="email" name="email" 
+                               class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all placeholder-slate-400 shadow-sm" 
+                               placeholder="ejemplo@gmail.com" required autofocus>
+                    </div>
+                    
+                    {% if form.email.errors %}
+                        <div class="mt-2 text-xs text-red-500 font-bold flex items-center gap-1.5 ml-1 animate-pulse">
+                            <i class="bi bi-exclamation-circle-fill"></i> {{ form.email.errors.0 }}
+                        </div>
+                    {% endif %}
+                    
+                    <p class="text-[10px] text-slate-400 mt-2 ml-1 flex items-center gap-1.5">
+                        <i class="bi bi-shield-check text-emerald-500"></i> 
+                        <span>Sus datos están protegidos y serán usados únicamente para trámites oficiales.</span>
+                    </p>
+                </div>
+
+                <button type="submit" class="w-full bg-brand-red hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                    <span>Guardar y Continuar</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="{% url 'logout' %}" class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors px-4 py-2 rounded-lg hover:bg-slate-100 uppercase tracking-wide">
+                <i class="bi bi-box-arrow-left text-lg"></i> Salir y continuar después
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

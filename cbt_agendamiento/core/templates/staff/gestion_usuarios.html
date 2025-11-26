@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Usuarios - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 border-b border-slate-200 pb-6">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+                <i class="bi bi-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h6 class="text-blue-600 font-bold text-xs tracking-widest uppercase mb-0.5">Base de Datos</h6>
+                <h2 class="text-2xl font-bold text-slate-800">Gestión de Personal y Ciudadanos</h2>
+            </div>
+        </div>
+
+        {% if request.user.is_superuser %}
+        <a href="{% url 'crear_inspector' %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all hover:-translate-y-0.5 text-sm">
+            <i class="bi bi-shield-plus"></i> <span>Nuevo Inspector</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- BARRA DE BÚSQUEDA -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-8">
+        <form method="GET" class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="bi bi-search text-slate-400 text-lg"></i>
+            </div>
+            <input type="text" name="q" 
+                   class="w-full pl-12 pr-32 py-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-lg" 
+                   placeholder="Buscar por Cédula, Nombre, Apellido o RUC..." 
+                   value="{{ query|default:'' }}" 
+                   autocomplete="off">
+            
+            <button type="submit" class="absolute right-2 top-2 bottom-2 px-6 bg-slate-800 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                <span>Buscar</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- TABLA DE USUARIOS -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                <i class="bi bi-people-fill text-blue-500"></i> Usuarios Registrados
+            </h3>
+            <span class="bg-white border border-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                Total: {{ page_obj.paginator.count }}
+            </span>
+        </div>
+        
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-3 whitespace-nowrap">Usuario</th>
+                        <th class="px-6 py-3 whitespace-nowrap">Información Personal</th>
+                        <th class="px-6 py-3 whitespace-nowrap">Contacto</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-center">Rol</th>
+                        <th class="px-6 py-3 whitespace-nowrap text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for u in page_obj %}
+                    <tr class="hover:bg-slate-50 transition-colors group">
+                        <!-- CÉDULA / AVATAR -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm border 
+                                    {% if u.is_staff %}bg-red-50 text-red-600 border-red-100{% else %}bg-slate-100 text-slate-600 border-slate-200{% endif %}">
+                                    {{ u.first_name|first }}
+                                </div>
+                                <div>
+                                    <div class="font-mono text-slate-900 font-bold text-sm">{{ u.username }}</div>
+                                    <div class="text-[10px] text-slate-400">Reg: {{ u.date_joined|date:"d/m/y" }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- NOMBRE / RUC -->
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-slate-800 text-base">{{ u.first_name }} {{ u.last_name }}</div>
+                            {% if u.perfil.ruc %}
+                                <div class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-xs text-slate-500 font-mono">
+                                    <i class="bi bi-card-heading"></i> {{ u.perfil.ruc }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- CONTACTO -->
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col gap-1 text-xs text-slate-500">
+                                {% if u.perfil.telefono %}
+                                    <span class="flex items-center gap-2"><i class="bi bi-whatsapp text-emerald-500"></i> {{ u.perfil.telefono }}</span>
+                                {% else %}
+                                    <span class="text-slate-300 flex items-center gap-2"><i class="bi bi-telephone"></i> --</span>
+                                {% endif %}
+                                
+                                {% if u.email %}
+                                    <span class="flex items-center gap-2"><i class="bi bi-envelope text-blue-500"></i> {{ u.email }}</span>
+                                {% else %}
+                                    <span class="text-slate-300 flex items-center gap-2"><i class="bi bi-envelope"></i> --</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- ROL -->
+                        <td class="px-6 py-4 text-center">
+                            {% if u.is_staff %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 shadow-sm">
+                                    <i class="bi bi-shield-fill mr-1"></i> INSPECTOR
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 shadow-sm">
+                                    <i class="bi bi-person mr-1"></i> CIUDADANO
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- ACCIONES -->
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1 opacity-100 lg:opacity-60 lg:group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'detalle_usuario' u.id %}" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 flex items-center justify-center transition-all" title="Ver Ficha"><i class="bi bi-eye"></i></a>
+                                <a href="{% url 'editar_usuario' u.id %}" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 flex items-center justify-center transition-all" title="Editar"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'eliminar_usuario' u.id %}" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all" onclick="return confirm('¿Eliminar usuario?');" title="Eliminar"><i class="bi bi-trash"></i></a>
+                                {% if request.user.is_superuser %}
+                                    <div class="w-px h-6 bg-slate-200 mx-1"></div>
+                                    <a href="{% url 'cambiar_rol' u.id %}" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 flex items-center justify-center transition-all" onclick="return confirm('¿Cambiar Rol?');" title="Rol"><i class="bi bi-shield-plus"></i></a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center">
+                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <i class="bi bi-people text-3xl"></i>
+                            </div>
+                            <h5 class="text-slate-700 font-bold mb-1">Sin resultados</h5>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- PAGINACIÓN -->
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <span class="text-xs text-slate-500">
+                Mostrando página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong>
+            </span>
+            <nav class="flex items-center gap-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 text-xs font-bold hover:bg-slate-100">Anterior</a>
+                {% endif %}
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 text-xs font-bold hover:bg-slate-100">Siguiente</a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}Mi Perfil - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex items-center mb-8 pb-4 border-b border-slate-200">
+        <div class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 flex items-center justify-center shadow-sm mr-4">
+            <i class="bi bi-person-circle text-lg"></i>
+        </div>
+        <div>
+            <h6 class="text-blue-600 font-bold text-xs tracking-widest uppercase mb-0.5">Cuenta Personal</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Configuración de Perfil</h2>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- COLUMNA IZQUIERDA: IDENTIDAD Y RESUMEN -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- Tarjeta de Identidad -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-6 text-center relative overflow-hidden">
+                <!-- Fondo Decorativo -->
+                <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-slate-50 to-transparent"></div>
+                
+                <div class="relative z-10">
+                    <!-- Avatar -->
+                    <div class="w-24 h-24 bg-white border-4 border-white rounded-full shadow-md flex items-center justify-center mx-auto mb-4 text-slate-700 text-3xl font-bold select-none">
+                        {{ user.first_name|first }}
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-slate-900 leading-tight mb-1">{{ user.first_name }} {{ user.last_name }}</h3>
+                    <p class="text-xs text-slate-500 font-medium mb-4">Miembro desde {{ user.date_joined|date:"M Y" }}</p>
+                    
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide
+                        {% if user.is_staff %}bg-red-50 text-red-600 border-red-100{% else %}bg-blue-50 text-blue-600 border-blue-100{% endif %}">
+                        {{ tipo_usuario }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Contexto (Dinámica) -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-5">
+                {% if user.is_staff %}
+                    <!-- Vista Inspector -->
+                    <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Rendimiento</h6>
+                    <div class="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
+                        <div class="text-3xl font-black text-slate-800">{{ total_inspecciones }}</div>
+                        <div class="text-[10px] text-slate-500 uppercase font-bold mt-1">Inspecciones Realizadas</div>
+                    </div>
+                {% else %}
+                    <!-- Vista Ciudadano -->
+                    <div class="flex justify-between items-center mb-4">
+                        <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Mis Propiedades</h6>
+                        <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200">{{ locales|length }}</span>
+                    </div>
+                    
+                    <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                        {% for local in locales %}
+                        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group cursor-default">
+                            <div class="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-red-500 transition-colors shrink-0">
+                                <i class="bi bi-shop"></i>
+                            </div>
+                            <div class="overflow-hidden">
+                                <div class="text-xs font-bold text-slate-700 truncate">{{ local.nombre_comercial }}</div>
+                                <div class="text-[10px] text-slate-400 truncate">{{ local.direccion }}</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-slate-400 text-xs">Sin locales registrados.</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- COLUMNA DERECHA: FORMULARIO DE DATOS -->
+        <div class="lg:col-span-8">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden">
+                
+                <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="bi bi-person-lines-fill text-blue-500"></i> Información de Cuenta
+                    </h3>
+                    <!-- Estado de Bloqueo -->
+                    {% if not puede_editar %}
+                        <span class="flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100" title="Edición restringida por seguridad">
+                            <i class="bi bi-lock-fill"></i> Bloqueado ({{ dias_restantes }} días)
+                        </span>
+                    {% else %}
+                         <span class="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-100">
+                            <i class="bi bi-unlock-fill"></i> Edición Habilitada
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="p-8">
+                    
+                    {% if not puede_editar %}
+                    <div class="mb-8 bg-red-50 border border-red-100 rounded-xl p-4 flex gap-3 items-start">
+                        <i class="bi bi-shield-lock-fill text-red-500 mt-0.5"></i>
+                        <div>
+                            <h6 class="text-sm font-bold text-red-800">Edición Temporalmente Deshabilitada</h6>
+                            <p class="text-xs text-red-700 mt-1 leading-relaxed">
+                                Por políticas de seguridad, solo puede actualizar su información de contacto cada 90 días. 
+                                Si requiere un cambio urgente, acuda a las oficinas del CBT.
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" id="profileForm">
+                        {% csrf_token %}
+
+                        <!-- SECCIÓN 1: DATOS PROTEGIDOS (READONLY) -->
+                        <div class="mb-8">
+                            <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="bi bi-shield-check"></i> Identificación (No Editable)
+                            </h6>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-5 rounded-xl border border-slate-100">
+                                <div class="space-y-1">
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase">Nombres</label>
+                                    <div class="font-medium text-slate-700 border-b border-slate-200 pb-1">{{ form.first_name.value }}</div>
+                                    <!-- Render oculto para enviar el dato -->
+                                    <input type="hidden" name="first_name" value="{{ form.first_name.value }}">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase">Apellidos</label>
+                                    <div class="font-medium text-slate-700 border-b border-slate-200 pb-1">{{ form.last_name.value }}</div>
+                                    <input type="hidden" name="last_name" value="{{ form.last_name.value }}">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase">Cédula / Usuario</label>
+                                    <div class="font-medium text-slate-700 font-mono">{{ user.username }}</div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase">RUC Registrado</label>
+                                    <div class="font-medium text-slate-700 font-mono">{{ form.ruc_readonly.value }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN 2: CONTACTO (EDITABLE) -->
+                        <div class="mb-6">
+                            <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="bi bi-pencil-square"></i> Contacto (Editable)
+                            </h6>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Correo Electrónico</label>
+                                    <div class="relative group">
+                                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" name="email" value="{{ form.email.value }}" 
+                                               class="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder-slate-300 disabled:bg-slate-50 disabled:text-slate-500" 
+                                               {% if not puede_editar and not request.user.is_superuser %}disabled{% endif %} required>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1 ml-1">Para notificaciones oficiales.</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Teléfono Celular</label>
+                                    <div class="relative group">
+                                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors"><i class="bi bi-whatsapp"></i></span>
+                                        <input type="text" name="telefono" value="{{ form.telefono.value }}" 
+                                               class="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder-slate-300 disabled:bg-slate-50 disabled:text-slate-500" 
+                                               {% if not puede_editar and not request.user.is_superuser %}disabled{% endif %} required>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1 ml-1">Solo números (10 dígitos).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-6 border-t border-slate-100 mt-8">
+                            <button type="button" class="px-6 py-3 bg-slate-900 hover:bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-slate-900/20 transition-all transform active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" 
+                                    data-bs-toggle="modal" data-bs-target="#confirmModal"
+                                    {% if not puede_editar and not request.user.is_superuser %}disabled{% endif %}>
+                                <i class="bi bi-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<div id="confirmModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform scale-100 transition-transform border border-slate-200">
+        <div class="p-5 border-b border-slate-100 flex items-center gap-3 bg-amber-50">
+            <div class="p-2 bg-white rounded-full text-amber-500 shadow-sm"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <h3 class="font-bold text-amber-800">Advertencia de Seguridad</h3>
+        </div>
+        
+        <div class="p-6 text-sm text-slate-600">
+            <p class="mb-4">Está a punto de modificar sus datos de contacto oficiales.</p>
+            <ul class="space-y-2 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <li class="flex gap-2 text-xs">
+                    <i class="bi bi-check-circle text-amber-500"></i>
+                    <span>Si los datos son incorrectos, <strong>perderá acceso a las notificaciones</strong>.</span>
+                </li>
+                <li class="flex gap-2 text-xs">
+                    <i class="bi bi-clock-history text-amber-500"></i>
+                    <span>Una vez guardado, <strong>se bloqueará la edición por 90 días</strong>.</span>
+                </li>
+            </ul>
+            <p class="font-medium text-slate-800">¿Confirma que la información es correcta?</p>
+        </div>
+
+        <div class="flex justify-end gap-3 px-6 pb-6">
+            <button onclick="cerrarModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors">Revisar</button>
+            <button onclick="document.getElementById('profileForm').submit()" class="px-4 py-2 rounded-lg bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 shadow-lg shadow-amber-500/20 transition-colors">Sí, Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lógica del Modal (Vanilla JS para compatibilidad Tailwind)
+    const btnTrigger = document.querySelector('[data-bs-target="#confirmModal"]');
+    const modal = document.getElementById('confirmModal');
+
+    if(btnTrigger) {
+        btnTrigger.addEventListener('click', (e) => {
+            e.preventDefault(); // Evitar submit directo
+            if (!btnTrigger.disabled) {
+                modal.classList.remove('hidden');
+            }
+        });
+    }
+
+    function cerrarModal() {
+        modal.classList.add('hidden');
+    }
+
+    // Forzar Mayúsculas (Solo visual)
+    // Nota: Email siempre es minúscula, se controla por CSS en base.html o input type
+</script>
+{% endblock %}

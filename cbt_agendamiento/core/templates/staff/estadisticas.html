@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Estadísticas - CBT{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="max-w-6xl mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+                <i class="bi bi-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h6 class="text-blue-600 font-bold text-xs tracking-widest uppercase mb-0.5">Inteligencia de Negocio</h6>
+                <h2 class="text-2xl font-bold text-slate-800">Efectividad Operativa</h2>
+            </div>
+        </div>
+        
+        <!-- Indicador de Estado (Siempre conectado al inicio) -->
+        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" id="ping-dot"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" id="static-dot"></span>
+            </span>
+            <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider" id="status-text">En Vivo</span>
+        </div>
+    </div>
+
+    <!-- CONTENIDO (Datos cargados directamente por Django) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Gráfico Circular -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-6 relative overflow-hidden">
+            <h4 class="font-bold text-slate-800 mb-6 text-center text-sm uppercase tracking-wide">Distribución de Trámites</h4>
+            <div class="relative h-64 w-full flex justify-center">
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div class="mt-6 grid grid-cols-3 gap-2 text-center">
+                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100 transition-all hover:shadow-sm">
+                    <div class="text-2xl font-black text-emerald-600 counter-anim" id="count-terminados">{{ stats.terminados }}</div>
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Terminados</div>
+                </div>
+                <div class="p-3 rounded-xl bg-amber-50 border border-amber-100 transition-all hover:shadow-sm">
+                    <div class="text-2xl font-black text-amber-500 counter-anim" id="count-pendientes">{{ stats.pendientes }}</div>
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">En Proceso</div>
+                </div>
+                <div class="p-3 rounded-xl bg-red-50 border border-red-100 transition-all hover:shadow-sm">
+                    <div class="text-2xl font-black text-red-500 counter-anim" id="count-rechazados">{{ stats.rechazados }}</div>
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Rechazados</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Barras -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-6 relative overflow-hidden">
+            <h4 class="font-bold text-slate-800 mb-6 text-center text-sm uppercase tracking-wide">Cierres Anormales</h4>
+            <div class="relative h-64 w-full">
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-500">
+                <p class="flex items-start gap-2">
+                    <i class="bi bi-info-circle text-blue-500 mt-0.5"></i>
+                    <span><strong>No Realizada:</strong> Turnos vencidos sin formulario o inasistencia.</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. OBTENER DATOS INICIALES (Renderizados por Django = Carga Instantánea)
+    const initialData = JSON.parse('{{ chart_data_json|safe }}');
+
+    // 2. CONFIGURACIÓN GRÁFICOS
+    const commonOptions = {
+        responsive: true, 
+        maintainAspectRatio: false,
+        animation: { duration: 1000, easing: 'easeOutQuart' }
+    };
+
+    // Pie Chart
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    const pieChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Terminados', 'Pendientes', 'Confirmados', 'Rechazados'],
+            datasets: [{
+                data: initialData.pie, // Usar datos iniciales
+                backgroundColor: ['#10B981', '#F59E0B', '#3B82F6', '#EF4444'],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            ...commonOptions,
+            plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, padding: 20 } } },
+            cutout: '65%'
+        }
+    });
+
+    // Bar Chart
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    const barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Terminados', 'Rechazados', 'Cancelados', 'No Asistió'],
+            datasets: [{
+                label: 'Cantidad',
+                data: initialData.bar, // Usar datos iniciales
+                backgroundColor: ['#3B82F6', '#EF4444', '#F59E0B', '#64748B'],
+                borderRadius: 6,
+                barThickness: 40
+            }]
+        },
+        options: {
+            ...commonOptions,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // 3. ACTUALIZACIÓN SILENCIOSA (Segundo plano)
+    function refreshData() {
+        if (document.hidden) return;
+
+        const statusText = document.getElementById('status-text');
+        const pingDot = document.getElementById('ping-dot');
+        const staticDot = document.getElementById('static-dot');
+
+        fetch('/api/estadisticas/live/')
+            .then(response => response.json())
+            .then(data => {
+                // Actualizar Textos
+                document.getElementById('count-terminados').innerText = data.terminados;
+                document.getElementById('count-pendientes').innerText = data.pendientes;
+                document.getElementById('count-rechazados').innerText = data.rechazados;
+
+                // Actualizar Gráficos (Solo datos)
+                pieChart.data.datasets[0].data = [data.terminados, data.pendientes, data.confirmados, data.rechazados];
+                pieChart.update('none'); // 'none' evita re-animar todo el gráfico, solo cambia valores suavemente
+
+                barChart.data.datasets[0].data = [data.terminados, data.rechazados, data.cancelados, data.no_realizadas];
+                barChart.update('none');
+                
+                // Feedback Visual de Conexión
+                statusText.innerText = "Sincronizado";
+                statusText.className = "text-[10px] font-bold text-emerald-600 uppercase tracking-wider";
+                pingDot.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+                staticDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500";
+            })
+            .catch(err => {
+                console.warn("Conexión perdida temporalmente", err);
+                statusText.innerText = "Reconectando...";
+                statusText.className = "text-[10px] font-bold text-amber-500 uppercase tracking-wider";
+                staticDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500";
+            });
+    }
+
+    // Actualizar cada 15 segundos (Suficiente para estadísticas)
+    setInterval(refreshData, 15000);
+</script>
+{% endblock %}

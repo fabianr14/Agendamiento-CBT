@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% block title %}Documentación - CBT{% endblock %}
+
+{% block content %}
+<!-- VISTA DE PANTALLA (OCULTA AL IMPRIMIR) -->
+<div class="max-w-7xl mx-auto d-print-none">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-end mb-10 border-b border-slate-200 pb-6 gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+                <i class="bi bi-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h6 class="text-blue-600 font-bold text-xs tracking-widest uppercase mb-0.5">Configuración</h6>
+                <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Gestión Documental</h2>
+            </div>
+        </div>
+        <button onclick="window.print()" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-sm hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+            <i class="bi bi-printer"></i> Imprimir Catálogo Completo
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        
+        <!-- COLUMNA 1: TASAS (PAGINADA) -->
+        <div class="space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/30 flex items-center justify-center text-white text-2xl border-t border-white/20">
+                        <i class="bi bi-currency-dollar drop-shadow-md"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">Tarifario Oficial</h3>
+                        <p class="text-xs text-slate-500 font-medium">Página {{ tasas.number }} de {{ tasas.paginator.num_pages }}</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('modalTasa').classList.remove('hidden')" class="group flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm hover:shadow-emerald-200 hover:scale-110">
+                    <i class="bi bi-plus-lg text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="bg-white border border-slate-200 rounded-3xl shadow-apple overflow-hidden relative flex flex-col h-[600px]">
+                <div class="overflow-y-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50/80 backdrop-blur-sm text-slate-500 font-bold uppercase text-[10px] sticky top-0 z-10 border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3">Giro</th>
+                                <th class="px-5 py-3 text-right">Valor</th>
+                                <th class="w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for tasa in tasas %}
+                            <tr class="group hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3">
+                                    <div class="font-bold text-slate-800 text-sm">{{ tasa.tipo.nombre }}</div>
+                                    <div class="text-[10px] text-slate-400 truncate max-w-[200px]">{{ tasa.descripcion }}</div>
+                                </td>
+                                <td class="px-5 py-3 text-right font-mono text-emerald-600 font-bold">
+                                    ${{ tasa.valor }}
+                                </td>
+                                <td class="px-3 text-right">
+                                    <a href="{% url 'eliminar_documento' 'tasa' tasa.id %}" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100" onclick="return confirm('¿Eliminar?');">
+                                        <i class="bi bi-trash-fill text-xs"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="p-10 text-center text-slate-400 text-xs">Sin registros.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINACIÓN TASAS -->
+                {% if tasas.has_other_pages %}
+                <div class="px-4 py-3 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <div class="flex gap-1">
+                        {% if tasas.has_previous %}
+                        <a href="?page_tasa={{ tasas.previous_page_number }}&page_req={{ requisitos.number }}" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-emerald-600 flex items-center justify-center transition-colors"><i class="bi bi-chevron-left"></i></a>
+                        {% endif %}
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400">Pág {{ tasas.number }}</span>
+                    <div class="flex gap-1">
+                        {% if tasas.has_next %}
+                        <a href="?page_tasa={{ tasas.next_page_number }}&page_req={{ requisitos.number }}" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-emerald-600 flex items-center justify-center transition-colors"><i class="bi bi-chevron-right"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- COLUMNA 2: REQUISITOS (PAGINADA) -->
+        <div class="space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <!-- ICONO 3D AZUL -->
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-b from-blue-400 to-blue-600 shadow-lg shadow-blue-500/30 flex items-center justify-center text-white text-2xl border-t border-white/20">
+                        <i class="bi bi-clipboard-check-fill drop-shadow-md"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">Guía de Requisitos</h3>
+                        <p class="text-xs text-slate-500 font-medium">Página {{ requisitos.number }} de {{ requisitos.paginator.num_pages }}</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('modalReq').classList.remove('hidden')" class="group flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all shadow-sm hover:shadow-blue-200 hover:scale-110">
+                    <i class="bi bi-plus-lg text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="bg-white border border-slate-200 rounded-3xl shadow-apple overflow-hidden flex flex-col h-[600px]">
+                <div class="overflow-y-auto flex-1 custom-scrollbar p-3 space-y-3">
+                    {% for req in requisitos %}
+                    <div class="p-4 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-100 transition-all group relative border-b border-slate-50 last:border-0">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="w-6 h-6 rounded bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                                {{ req.orden }}
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between">
+                                    <span class="text-[9px] font-bold text-blue-500 uppercase tracking-wider bg-blue-50 px-1.5 rounded mb-1 inline-block">{{ req.get_seccion_display }}</span>
+                                    <a href="{% url 'eliminar_documento' 'requisito' req.id %}" class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" onclick="return confirm('¿Eliminar?');"><i class="bi bi-x-lg"></i></a>
+                                </div>
+                                <h5 class="font-bold text-slate-800 text-sm mb-0.5">{{ req.titulo }}</h5>
+                                <p class="text-[11px] text-slate-500 leading-snug line-clamp-2">{{ req.contenido }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-12 text-center text-slate-400 text-xs">No hay requisitos.</div>
+                    {% endfor %}
+                </div>
+
+                <!-- PAGINACIÓN REQUISITOS -->
+                {% if requisitos.has_other_pages %}
+                <div class="px-4 py-3 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <div class="flex gap-1">
+                        {% if requisitos.has_previous %}
+                        <a href="?page_req={{ requisitos.previous_page_number }}&page_tasa={{ tasas.number }}" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-blue-600 flex items-center justify-center transition-colors"><i class="bi bi-chevron-left"></i></a>
+                        {% endif %}
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400">Pág {{ requisitos.number }}</span>
+                    <div class="flex gap-1">
+                        {% if requisitos.has_next %}
+                        <a href="?page_req={{ requisitos.next_page_number }}&page_tasa={{ tasas.number }}" class="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-blue-600 flex items-center justify-center transition-colors"><i class="bi bi-chevron-right"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- VISTA DE IMPRESIÓN (SOLO VISIBLE AL IMPRIMIR) -->
+<div class="print-only hidden">
+    <div class="text-center mb-8 border-b-2 border-black pb-4">
+        <h1 class="text-2xl font-bold uppercase">Cuerpo de Bomberos Tulcán</h1>
+        <p class="text-sm">Configuración del Sistema - Catálogos Completos</p>
+        <p class="text-xs">Generado: {% now "d/m/Y H:i" %}</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-8">
+        <div>
+            <h3 class="font-bold border-b border-black mb-2 uppercase text-sm">1. Cuadro Tarifario</h3>
+            <table class="w-full text-xs border-collapse">
+                <thead>
+                    <tr class="border-b border-black text-left">
+                        <th class="py-1">Giro</th>
+                        <th class="py-1 text-right">Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tasa in all_tasas %}
+                    <tr class="border-b border-gray-200">
+                        <td class="py-1">{{ tasa.tipo.nombre }}</td>
+                        <td class="py-1 text-right font-mono">${{ tasa.valor }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div>
+            <h3 class="font-bold border-b border-black mb-2 uppercase text-sm">2. Requisitos Legales</h3>
+            <div class="text-xs space-y-4">
+                {% regroup all_requisitos by get_seccion_display as secciones_list %}
+                {% for seccion in secciones_list %}
+                    <div>
+                        <h4 class="font-bold uppercase mb-1 bg-gray-100 px-1">{{ seccion.grouper }}</h4>
+                        <ul class="list-decimal pl-4 space-y-1">
+                            {% for req in seccion.list %}
+                            <li>
+                                <strong>{{ req.titulo }}</strong>: {{ req.contenido }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TASA (Mismo de antes) -->
+<div id="modalTasa" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-lg">Nueva Tarifa</h3>
+            <button onclick="document.getElementById('modalTasa').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="bi bi-x-lg text-sm"></i></button>
+        </div>
+        <form method="POST" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="crear_tasa" value="1">
+            
+            <div class="flex gap-4">
+                <div class="w-24">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Orden</label>
+                    {{ form_tasa.orden }}
+                    <p class="text-[9px] text-slate-400 mt-1">0 = Auto</p>
+                </div>
+                <div class="flex-grow">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Giro</label>
+                    {{ form_tasa.tipo }}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Valor Anual</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-emerald-600 font-bold text-lg">$</span>
+                    {{ form_tasa.valor }}
+                </div>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Descripción</label>
+                {{ form_tasa.descripcion }}
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-50 mt-4">
+                <button type="button" onclick="document.getElementById('modalTasa').classList.add('hidden')" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50">Cancelar</button>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-500/20">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL REQUISITO (Mismo de antes) -->
+<div id="modalReq" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-lg">Nuevo Requisito</h3>
+            <button onclick="document.getElementById('modalReq').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="bi bi-x-lg text-sm"></i></button>
+        </div>
+        <form method="POST" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="crear_requisito" value="1">
+            
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Sección</label>
+                {{ form_req.seccion }}
+            </div>
+            <div class="flex gap-4">
+                <div class="w-24">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Orden</label>
+                    {{ form_req.orden }}
+                </div>
+                <div class="flex-grow">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Título</label>
+                    {{ form_req.titulo }}
+                </div>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Detalle</label>
+                {{ form_req.contenido }}
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-50 mt-4">
+                <button type="button" onclick="document.getElementById('modalReq').classList.add('hidden')" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50">Cancelar</button>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-500/20">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* ESTILOS DE IMPRESIÓN */
+    @media print {
+        @page { margin: 1cm; }
+        body { background: white !important; color: black !important; }
+        .d-print-none { display: none !important; } /* Oculta paneles interactivos */
+        .print-only { display: block !important; }  /* Muestra el reporte completo */
+        
+        /* Asegurar que las tablas se vean bien */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 5px; }
+    }
+    
+    /* Ajustes Inputs */
+    #modalTasa input[name="valor"] { padding-left: 1.8rem; font-size: 1.1rem; font-weight: 700; color: #059669; }
+</style>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo Inspector - CBT{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        
+        <div class="d-flex align-items-center mb-4 border-bottom border-secondary pb-3">
+            <a href="{% url 'gestion_usuarios' %}" class="btn btn-outline-secondary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h6 class="text-warning text-uppercase mb-0 small fw-bold ls-1">Recursos Humanos</h6>
+                <h2 class="fw-bold text-white mb-0">Alta de Personal</h2>
+            </div>
+        </div>
+
+        <div class="interactive-card p-4 bg-dark border-secondary shadow-lg">
+            <div class="text-center mb-4">
+                <div class="d-inline-block p-3 rounded-circle bg-danger bg-opacity-10 text-danger border border-danger mb-3">
+                    <i class="bi bi-shield-lock-fill fs-1"></i>
+                </div>
+                <h5 class="text-white fw-bold">Nuevo Inspector Operativo</h5>
+                <p class="text-white-50 small">Este usuario tendrá acceso al Panel de Comando y Hojas de Ruta.</p>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Cédula (Usuario)</label>
+                        {{ form.cedula }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Contraseña</label>
+                        {{ form.password }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-white-50">Nombres</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-white-50">Apellidos</label>
+                    {{ form.last_name }}
+                </div>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Teléfono</label>
+                        {{ form.telefono }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-white-50">Email Institucional</label>
+                        {{ form.email }}
+                    </div>
+                </div>
+
+                <div class="alert alert-dark border-secondary d-flex align-items-center" role="alert">
+                    <i class="bi bi-info-circle-fill text-info me-3 fs-5"></i>
+                    <div class="small text-muted-2">
+                        El rol de INSPECTOR se asignará automáticamente.
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-cbt-primary shadow">
+                        <i class="bi bi-person-plus-fill me-2"></i>Registrar Inspector
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-darker { background-color: #15171a !important; }
+    /* Forzar mayúsculas en nombres */
+    input[type="text"] { text-transform: uppercase; }
+    /* Excepción para email */
+    input[type="email"] { text-transform: none; }
+</style>
+{% endblock %}
+```
+
+---
+
+### PASO 5: Botón en Gestión de Usuarios (`gestion_usuarios.html`)
+
+Finalmente, agregamos el botón para acceder a este formulario en la pantalla que solo ve el Superusuario.
+
+Edita **`core/templates/staff/gestion_usuarios.html`**. Reemplaza el bloque del Encabezado:
+
+```html
+        <!-- ENCABEZADO -->
+        <div class="d-flex align-items-center justify-content-between mb-4 border-bottom border-secondary pb-3">
+            <div class="d-flex align-items-center">
+                <a href="{% url 'dashboard_staff' %}" class="btn btn-outline-secondary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h6 class="text-info text-uppercase mb-0 small fw-bold ls-1">Base de Datos</h6>
+                    <h2 class="fw-bold text-white mb-0">Gestión de Personal</h2>
+                </div>
+            </div>
+            
+            <!-- BOTÓN SOLO PARA SUPERUSUARIO -->
+            {% if request.user.is_superuser %}
+            <a href="{% url 'crear_inspector' %}" class="btn btn-outline-warning d-flex align-items-center">
+                <i class="bi bi-shield-plus me-2"></i> Nuevo Inspector
+            </a>
+            {% endif %}
+        </div>

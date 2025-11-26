@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Ficha Usuario - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    
+    <!-- ENCABEZADO DE NAVEGACIÓN -->
+    <div class="flex items-center mb-8 pb-4 border-b border-slate-200">
+        <a href="{% url 'gestion_usuarios' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-blue-600 font-bold text-xs tracking-widest uppercase mb-0.5">Base de Datos</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Ficha Personal</h2>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- COLUMNA IZQUIERDA: PERFIL PERSONAL -->
+        <div class="lg:col-span-4">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-6 text-center relative overflow-hidden h-full">
+                <!-- Decoración de fondo -->
+                <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-slate-50 to-transparent z-0"></div>
+                
+                <div class="relative z-10">
+                    <!-- Avatar -->
+                    <div class="w-24 h-24 bg-white border-4 border-white rounded-full shadow-md flex items-center justify-center mx-auto mb-4 text-slate-700 text-3xl font-bold">
+                        {{ usuario.first_name|first }}
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-slate-900 mb-1">{{ usuario.first_name }} {{ usuario.last_name }}</h3>
+                    <p class="text-sm text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded-md inline-block mb-6 border border-slate-200">
+                        {{ usuario.username }}
+                    </p>
+                    
+                    <div class="space-y-4 text-left">
+                        <div class="flex justify-between border-b border-slate-100 pb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">RUC</span>
+                            <span class="text-sm font-mono text-slate-700">{{ usuario.perfil.ruc|default:"--" }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-100 pb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Teléfono</span>
+                            <span class="text-sm text-slate-700">{{ usuario.perfil.telefono|default:"--" }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-100 pb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Email</span>
+                            <span class="text-sm text-slate-700 truncate max-w-[150px]" title="{{ usuario.email }}">{{ usuario.email|default:"--" }}</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Rol</span>
+                            {% if usuario.is_staff %}
+                                <span class="px-2 py-1 rounded bg-red-50 text-red-600 text-[10px] font-bold border border-red-100">INSPECTOR</span>
+                            {% else %}
+                                <span class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-[10px] font-bold border border-blue-100">CIUDADANO</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-4 border-t border-slate-100">
+                        <a href="{% url 'editar_usuario' usuario.id %}" class="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs transition-colors shadow-sm uppercase tracking-wide">
+                            <i class="bi bi-pencil-square"></i> Editar Datos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: LOCALES ASOCIADOS -->
+        <div class="lg:col-span-8">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden flex flex-col h-full">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="bi bi-shop text-red-600"></i> Locales Registrados
+                    </h3>
+                    <span class="bg-white border border-slate-200 text-slate-500 text-xs font-bold px-2 py-0.5 rounded-full">{{ locales|length }}</span>
+                </div>
+                
+                <div class="p-4 space-y-3 overflow-y-auto custom-scrollbar flex-1" style="max-height: 500px;">
+                    {% for local in locales %}
+                    <div class="group flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-red-300 hover:shadow-md transition-all bg-white relative overflow-hidden">
+                        <!-- Hover effect subtle background -->
+                        <div class="absolute inset-0 bg-red-50 opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none"></div>
+
+                        <div class="flex items-center gap-4 relative z-10">
+                            <div class="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-red-500 group-hover:border-red-100 transition-colors">
+                                <i class="bi bi-shop-window text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800 group-hover:text-red-700 transition-colors">{{ local.nombre_comercial }}</h4>
+                                <p class="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                                    <span class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-medium">{{ local.tipo.nombre }}</span>
+                                    <span class="truncate max-w-[150px] sm:max-w-[250px]"><i class="bi bi-geo-alt text-slate-400"></i> {{ local.direccion }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <a href="{% url 'detalle_establecimiento' local.id %}" class="relative z-10 w-8 h-8 rounded-full border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 flex items-center justify-center transition-all bg-white shadow-sm" title="Ver Ficha Técnica">
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-16">
+                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 border border-slate-100">
+                            <i class="bi bi-building-slash text-3xl"></i>
+                        </div>
+                        <h5 class="text-slate-600 font-bold text-sm">Sin Propiedades</h5>
+                        <p class="text-slate-400 text-xs mt-1">Este usuario no tiene locales registrados.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

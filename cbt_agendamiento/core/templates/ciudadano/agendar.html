@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% block title %}Agendar Cita - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    
+    <!-- ENCABEZADO CON NAVEGACIÓN -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 pb-6 gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'home_ciudadano' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all shadow-sm">
+                <i class="bi bi-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-0.5">Nueva Solicitud</h6>
+                <h2 class="text-2xl font-bold text-slate-800">Agendamiento de Inspección</h2>
+            </div>
+        </div>
+
+        <!-- Resumen Local -->
+        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center border border-slate-200">
+                <i class="bi bi-shop"></i>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Establecimiento</div>
+                <div class="text-sm font-bold text-slate-700">{{ local.nombre_comercial|truncatechars:25 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CASO 1: YA TIENE TURNO ACTIVO (BLOQUEO) -->
+    {% if turno_activo %}
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white border border-amber-200 rounded-3xl shadow-apple p-8 text-center relative overflow-hidden">
+            <!-- Fondo decorativo -->
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 to-amber-600"></div>
+            
+            <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500 border border-amber-100 shadow-inner">
+                <i class="bi bi-hourglass-split text-4xl"></i>
+            </div>
+            
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">Solicitud en Curso</h3>
+            <p class="text-slate-500 mb-8 max-w-md mx-auto text-sm leading-relaxed">
+                Este establecimiento ya cuenta con un proceso de inspección activo (<span class="font-bold text-amber-600">{{ turno_activo.get_estado_display }}</span>).<br>
+                No es necesario crear una nueva solicitud en este momento.
+            </p>
+            
+            <!-- Tarjeta de Resumen del Turno -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 max-w-sm mx-auto mb-8 text-left shadow-sm">
+                <div class="flex justify-between items-center mb-3 border-b border-slate-200 pb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Fecha Programada</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-white border border-slate-200 text-slate-600">
+                        #{{ turno_activo.id }}
+                    </span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-center bg-white border border-slate-200 rounded-lg p-2 min-w-[3.5rem]">
+                        <span class="block text-[10px] font-bold text-red-500 uppercase">{{ turno_activo.agenda.fecha|date:"M" }}</span>
+                        <span class="block text-xl font-bold text-slate-800 leading-none">{{ turno_activo.agenda.fecha|date:"d" }}</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-slate-800">{{ turno_activo.agenda.fecha|date:"l, Y" }}</div>
+                        <div class="text-xs text-slate-500 flex items-center gap-1">
+                            <i class="bi bi-clock"></i> {{ turno_activo.get_bloque_display }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-3">
+                <a href="{% url 'home_ciudadano' %}" class="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                    Volver al Inicio
+                </a>
+                <a href="{% url 'cancelar_turno' turno_activo.id %}" class="px-6 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-bold hover:bg-red-100 hover:border-red-200 transition-colors" onclick="return confirm('¿Está seguro de cancelar esta solicitud? Perderá su turno.');">
+                    Cancelar Solicitud
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    
+    <!-- CASO 2: CALENDARIO DE DISPONIBILIDAD -->
+    
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h4 class="font-bold text-slate-700 flex items-center gap-2 text-sm uppercase tracking-wide">
+            <i class="bi bi-calendar-week text-slate-400"></i> Fechas Disponibles
+        </h4>
+        
+        <!-- Filtro Rápido -->
+        <div class="relative w-full sm:w-64 group">
+            <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-red transition-colors"></i>
+            <input type="text" id="dateFilter" class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all placeholder-slate-400 shadow-sm" placeholder="Buscar día (Ej: Lunes, 25)...">
+        </div>
+    </div>
+
+    {% if opciones %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for item in opciones %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-apple-hover transition-all group relative date-card overflow-hidden cursor-default" 
+             data-filter="{{ item.info.fecha|date:'l d F Y' }}">
+            
+            <!-- Borde decorativo -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-slate-100 group-hover:bg-brand-red transition-colors"></div>
+
+            <!-- Encabezado de Fecha -->
+            <div class="flex justify-between items-start mb-5 pb-4 border-b border-slate-50">
+                <div>
+                    <div class="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-0.5">{{ item.info.fecha|date:"F" }}</div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-4xl font-bold text-slate-800 tracking-tight">{{ item.info.fecha|date:"d" }}</span>
+                        <span class="text-sm text-slate-500 font-medium capitalize">{{ item.info.fecha|date:"l" }}</span>
+                    </div>
+                </div>
+                <span class="text-[10px] bg-slate-50 text-slate-400 border border-slate-100 px-2 py-1 rounded-lg font-mono">
+                    {{ item.info.fecha|date:"Y" }}
+                </span>
+            </div>
+            
+            <!-- Bloques de Tiempo -->
+            <div class="space-y-2.5">
+                {% for bloque in item.bloques %}
+                
+                <!-- BOTÓN DE HORARIO -->
+                <!-- Nota: Usamos comillas dobles en el filtro de fecha -->
+                <button onclick="abrirModal('{{ item.info.id }}', '{{ bloque.codigo }}', '{{ item.info.fecha|date:"l, d \d\e F" }}', '{{ bloque.label }}')"
+                   class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-brand-red hover:shadow-md transition-all group/btn text-left relative overflow-hidden"
+                   {% if not bloque.disponible %}disabled{% endif %}>
+                    
+                    <!-- Indicador visual izquierdo -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1 {% if bloque.codigo == 'MANANA' %}bg-amber-400{% else %}bg-indigo-400{% endif %} opacity-50 group-hover/btn:opacity-100 transition-opacity"></div>
+                    
+                    <div class="flex items-center gap-3 pl-2">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white shadow-sm transition-colors 
+                            {% if bloque.codigo == 'MANANA' %}bg-amber-400 group-hover/btn:bg-amber-500{% else %}bg-indigo-400 group-hover/btn:bg-indigo-500{% endif %}">
+                            <i class="bi {% if bloque.codigo == 'MANANA' %}bi-brightness-high{% else %}bi-moon-stars{% endif %}"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-700 group-hover/btn:text-slate-900">{{ bloque.label }}</div>
+                            <div class="text-[10px] text-slate-400 font-medium">{{ bloque.hora }}</div>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        {% if bloque.disponible %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 mb-1">LIBRE</span>
+                            <!-- Barra Capacidad Mini -->
+                            <div class="w-12 h-1 bg-slate-200 rounded-full overflow-hidden ml-auto">
+                                <div class="h-full {% if bloque.pct > 80 %}bg-amber-500{% else %}bg-emerald-500{% endif %}" style="width: {{ bloque.pct }}%"></div>
+                            </div>
+                        {% else %}
+                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-400 border border-slate-200">LLENO</span>
+                        {% endif %}
+                    </div>
+                </button>
+                
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Mensaje Sin Resultados (Filtro) -->
+    <div id="noResults" class="hidden text-center py-12 bg-white border border-slate-200 rounded-2xl border-dashed mt-6">
+        <i class="bi bi-search text-2xl text-slate-300 mb-2 block"></i>
+        <p class="text-slate-500 text-sm">No se encontraron fechas con ese criterio.</p>
+        <button onclick="document.getElementById('dateFilter').value=''; filtrarFecha()" class="text-brand-red text-xs font-bold hover:underline mt-2">
+            Limpiar filtro
+        </button>
+    </div>
+
+    {% else %}
+    <!-- Estado Vacío General -->
+    <div class="text-center py-20 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50 mt-8">
+        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 border border-slate-200">
+            <i class="bi bi-calendar-x text-4xl"></i>
+        </div>
+        <h5 class="text-slate-700 font-bold text-lg mb-2">Agenda no disponible</h5>
+        <p class="text-slate-500 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+            Actualmente no hay fechas habilitadas para la zona <strong>{{ local.get_parroquia_display }}</strong>.<br>
+            Por favor intente nuevamente más tarde o contacte al soporte.
+        </p>
+        <a href="{% url 'home_ciudadano' %}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-brand-red hover:border-brand-red transition-all shadow-sm">
+            <i class="bi bi-arrow-left"></i> Volver al Inicio
+        </a>
+    </div>
+    {% endif %}
+    
+    {% endif %}
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<div id="confirmModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300 opacity-0" style="pointer-events: none;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-all duration-300 border border-slate-200">
+        
+        <!-- Header Modal -->
+        <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+            <div>
+                <h3 class="font-bold text-slate-800 text-lg">Confirmar Reserva</h3>
+                <p class="text-xs text-slate-500">Complete los datos para finalizar</p>
+            </div>
+            <button onclick="cerrarModal()" class="w-8 h-8 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 flex items-center justify-center transition-colors">
+                <i class="bi bi-x-lg text-sm"></i>
+            </button>
+        </div>
+        
+        <form method="POST" class="p-6">
+            {% csrf_token %}
+            <input type="hidden" name="agenda_id" id="modal_agenda_id">
+            <input type="hidden" name="bloque" id="modal_bloque_id">
+
+            <!-- Resumen Visual -->
+            <div class="mb-6 bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-4">
+                <div class="flex flex-col items-center justify-center bg-white border border-slate-200 rounded-lg p-2 min-w-[3.5rem] shadow-sm">
+                    <i class="bi bi-calendar-check text-brand-red text-xl"></i>
+                </div>
+                <div class="flex-1 border-l border-slate-200 pl-4">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Selección</p>
+                    <div class="font-bold text-slate-800 text-sm" id="modal_fecha_txt"></div>
+                    <div class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span id="modal_bloque_txt"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-5 mb-8">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Teléfono de Contacto</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-whatsapp"></i></span>
+                        <input type="tel" name="telefono" class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all" required placeholder="Ej: 0991234567" value="{{ local.propietario.perfil.telefono }}">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Referencia Ubicación</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-geo-alt"></i></span>
+                        <input type="text" name="referencia" class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all uppercase" required placeholder="Ej: Frente al parque...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
+                <button type="button" onclick="cerrarModal()" class="py-2.5 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" class="py-2.5 rounded-xl bg-brand-red text-white font-bold text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 transform active:scale-95">
+                    Confirmar Turno
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Animación suave para el modal */
+    .modal-visible {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    .modal-visible > div {
+        transform: scale(100%) !important;
+    }
+</style>
+
+<script>
+    // --- LÓGICA DEL MODAL ---
+    const modal = document.getElementById('confirmModal');
+    const modalContent = modal.querySelector('div');
+
+    function abrirModal(agendaId, bloque, fecha, label) {
+        // Llenar datos
+        document.getElementById('modal_agenda_id').value = agendaId;
+        document.getElementById('modal_bloque_id').value = bloque;
+        document.getElementById('modal_fecha_txt').innerText = fecha;
+        document.getElementById('modal_bloque_txt').innerText = label;
+        
+        // Mostrar con animación
+        modal.classList.remove('hidden');
+        // Pequeño delay para permitir que el navegador renderice antes de la transición CSS
+        setTimeout(() => {
+            modal.classList.add('modal-visible');
+        }, 10);
+        
+        // Focus inteligente
+        setTimeout(() => {
+            const telInput = document.querySelector('input[name="telefono"]');
+            if(telInput.value) document.querySelector('input[name="referencia"]').focus();
+            else telInput.focus();
+        }, 100);
+    }
+
+    function cerrarModal() {
+        modal.classList.remove('modal-visible');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300); // Esperar a que termine la transición de opacidad
+    }
+    
+    // Cerrar con ESC
+    document.addEventListener('keydown', (e) => { if(e.key === 'Escape') cerrarModal(); });
+
+    // --- FILTRO INSTANTÁNEO ---
+    const filterInput = document.getElementById('dateFilter');
+    if(filterInput){
+        filterInput.addEventListener('keyup', function() {
+            const term = this.value.toLowerCase();
+            const cards = document.querySelectorAll('.date-card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const text = card.getAttribute('data-filter').toLowerCase();
+                if (text.includes(term)) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('noResults').classList.toggle('hidden', visibleCount > 0);
+        });
+    }
+    
+    // Mayúsculas
+    document.querySelectorAll('input[name="referencia"]').forEach(el => {
+        el.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+    });
+</script>
+{% endblock %}

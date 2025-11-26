@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Editar Tipo - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex items-center mb-8 pb-4 border-b border-slate-200">
+        <a href="{% url 'gestion_tipos' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-500 hover:bg-emerald-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-emerald-600 font-bold text-xs tracking-widest uppercase mb-0.5">Configuración</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Editar Categoría</h2>
+        </div>
+    </div>
+
+    <!-- TARJETA DE EDICIÓN -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-8">
+        
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-500 border border-emerald-100 shadow-sm">
+                <i class="bi bi-pencil-square text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">Modificar Registro</h3>
+            <p class="text-slate-500 text-sm">Actualice el nombre para la categoría <strong class="text-slate-700">"{{ tipo.nombre }}"</strong>.</p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="mb-8">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Nombre del Tipo</label>
+                <div class="relative group">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors"><i class="bi bi-tag"></i></span>
+                    <!-- Input Manual con estilos Tailwind -->
+                    <input type="text" name="nombre" value="{{ form.nombre.value }}" 
+                           class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all uppercase placeholder-slate-300" 
+                           placeholder="EJ: FARMACIA" required>
+                </div>
+                {% if form.nombre.errors %}
+                    <div class="text-red-500 text-xs mt-2 ml-1 font-medium flex items-center gap-1">
+                        <i class="bi bi-exclamation-circle"></i> {{ form.nombre.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <a href="{% url 'gestion_tipos' %}" class="flex items-center justify-center px-4 py-3 border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
+                    Cancelar
+                </a>
+                <button type="submit" class="flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-slate-900/20 hover:shadow-emerald-500/30 transition-all text-sm transform active:scale-95">
+                    <i class="bi bi-save"></i> Actualizar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Forzar Mayúsculas en tiempo real
+    document.querySelector('input[name="nombre"]').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+</script>
+{% endblock %}

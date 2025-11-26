@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar Ubicación - CBT{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<div class="max-w-4xl mx-auto">
+    
+    <!-- ENCABEZADO DE NAVEGACIÓN -->
+    <div class="flex items-center mb-6 border-b border-slate-200 pb-4">
+        <a href="{% url 'home_ciudadano' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-0.5">Configuración Inicial</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Geolocalización del Local</h2>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- COLUMNA IZQUIERDA: HERRAMIENTAS -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- 1. DATOS DEL LOCAL -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-apple">
+                <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Establecimiento</h6>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h4 class="font-bold text-slate-800 text-sm truncate" title="{{ local.nombre_comercial }}">{{ local.nombre_comercial }}</h4>
+                        <p class="text-xs text-slate-500 truncate">{{ local.direccion }}</p>
+                    </div>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <i class="bi bi-info-circle me-1"></i> Ubique la entrada principal.
+                </div>
+            </div>
+
+            <!-- 2. HERRAMIENTAS DE MAPA -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-apple">
+                <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Herramientas</h6>
+                
+                <div class="space-y-3">
+                    <!-- Botón GPS -->
+                    <button onclick="usarGPS()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 transition-all group text-left">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-600 flex items-center justify-center transition-colors">
+                            <i class="bi bi-crosshair"></i>
+                        </div>
+                        <div>
+                            <span class="block text-sm font-bold">Usar mi GPS</span>
+                            <span class="block text-[10px] opacity-70">Si está en el local ahora</span>
+                        </div>
+                    </button>
+                    
+                    <!-- Selector Zona -->
+                    <div class="relative">
+                        <i class="bi bi-airplane-engines absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <select id="selector-zona" class="w-full pl-9 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all cursor-pointer appearance-none hover:bg-white">
+                            <option value="" selected>Ir a zona conocida...</option>
+                            <optgroup label="ZONA NORTE">
+                                <option value="0.8325,-77.7030">Terminal Terrestre</option>
+                                <option value="0.8280,-77.7050">Parque Isidro Ayora</option>
+                                <option value="0.8425,-77.7020">Aeropuerto</option>
+                            </optgroup>
+                            <optgroup label="ZONA CENTRO">
+                                <option value="0.8119,-77.7173">Parque Central</option>
+                                <option value="0.8150,-77.7150">Mercado Central</option>
+                                <option value="0.8130,-77.7200">Cementerio</option>
+                            </optgroup>
+                            <optgroup label="ZONA SUR">
+                                <option value="0.8025,-77.7220">Universidad UPEC</option>
+                                <option value="0.8000,-77.7250">Estadio Olímpico</option>
+                                <option value="0.7950,-77.7300">Salida Sur</option>
+                            </optgroup>
+                        </select>
+                        <i class="bi bi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. INSTRUCCIÓN FINAL -->
+            <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3">
+                <i class="bi bi-hand-index-thumb-fill text-amber-500 text-lg"></i>
+                <p class="text-xs text-amber-800 leading-relaxed">
+                    Mueva el mapa y haga <strong>clic exacto</strong> sobre su local para fijar el marcador azul.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- COLUMNA DERECHA: MAPA Y CONFIRMACIÓN -->
+        <div class="lg:col-span-8 flex flex-col h-full">
+            
+            <div class="relative bg-white border border-slate-200 rounded-2xl shadow-apple p-1 flex-grow h-[500px] overflow-hidden group">
+                <div id="map" class="w-full h-full rounded-xl z-0 bg-slate-100"></div>
+                
+                <!-- Loader Overlay (Oculto por defecto) -->
+                <div id="map-loader" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 hidden flex-col items-center justify-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mb-2"></div>
+                    <span class="text-xs font-bold text-slate-500">Obteniendo ubicación...</span>
+                </div>
+            </div>
+
+            <!-- BOTÓN DE ACCIÓN FLOTANTE/FIJO -->
+            <form method="POST" class="mt-4">
+                {% csrf_token %}
+                <input type="hidden" name="latitud" id="lat">
+                <input type="hidden" name="longitud" id="lng">
+
+                <button type="submit" id="btn-confirmar" class="w-full py-4 bg-slate-200 text-slate-400 font-bold rounded-2xl transition-all cursor-not-allowed flex items-center justify-center gap-2 shadow-inner" disabled>
+                    <i class="bi bi-geo-alt"></i> 
+                    <span>Primero fije el punto en el mapa</span>
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // 1. INICIALIZAR MAPA
+    // Centrado inicial en Parque Central Tulcán
+    var map = L.map('map').setView([0.8119, -77.7173], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+
+    var marker;
+    var btnConfirmar = document.getElementById('btn-confirmar');
+
+    function ponerPin(lat, lng) {
+        if (marker) marker.setLatLng([lat, lng]);
+        else marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+        
+        // Actualizar inputs ocultos
+        document.getElementById('lat').value = lat.toFixed(8);
+        document.getElementById('lng').value = lng.toFixed(8);
+        
+        // Activar botón con estilo "Apple Action"
+        btnConfirmar.disabled = false;
+        btnConfirmar.className = "w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 transform hover:-translate-y-1 flex items-center justify-center gap-2";
+        btnConfirmar.innerHTML = '<i class="bi bi-check-circle-fill text-lg"></i> <span>Confirmar Ubicación Definitiva</span>';
+        
+        // Listener para arrastre
+        marker.on('dragend', function(e) {
+            var position = marker.getLatLng();
+            document.getElementById('lat').value = position.lat.toFixed(8);
+            document.getElementById('lng').value = position.lng.toFixed(8);
+        });
+    }
+
+    map.on('click', function(e) {
+        ponerPin(e.latlng.lat, e.latlng.lng);
+    });
+
+    // 2. FUNCIÓN GPS
+    function usarGPS() {
+        if (!navigator.geolocation) {
+            alert("Su navegador no soporta GPS.");
+            return;
+        }
+        
+        const loader = document.getElementById('map-loader');
+        loader.classList.remove('hidden');
+        loader.classList.add('flex'); // Mostrar loader
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                loader.classList.add('hidden');
+                loader.classList.remove('flex');
+                
+                map.flyTo([lat, lng], 18);
+                ponerPin(lat, lng);
+            },
+            () => { 
+                loader.classList.add('hidden');
+                loader.classList.remove('flex');
+                alert("No se pudo obtener su ubicación. Por favor use el mapa manual o seleccione una zona."); 
+            },
+            { enableHighAccuracy: true }
+        );
+    }
+
+    // 3. SALTO RÁPIDO DE ZONA
+    document.getElementById('selector-zona').addEventListener('change', function() {
+        if (this.value) {
+            const [lat, lng] = this.value.split(',');
+            map.flyTo([parseFloat(lat), parseFloat(lng)], 16);
+        }
+    });
+</script>
+{% endblock %}

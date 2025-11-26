@@ -1,0 +1,140 @@
+/* =========================================
+   1. VARIABLES (TEMA CLARO INSTITUCIONAL)
+   ========================================= */
+:root {
+    /* Identidad */
+    --brand-red: #DC2626;       /* Rojo Institucional */
+    --brand-red-hover: #B91C1C;
+    
+    /* Fondos */
+    --bg-body: #F8FAFC;         /* Gris muy claro (Slate 50) para el fondo de la app */
+    --bg-card: #FFFFFF;         /* Blanco puro para contenedores */
+    --bg-sidebar: #FFFFFF;      /* Blanco para el menú */
+    
+    /* Textos */
+    --text-main: #1E293B;       /* Gris oscuro (Slate 800) para títulos */
+    --text-body: #475569;       /* Gris medio (Slate 600) para párrafos */
+    --text-muted: #94A3B8;      /* Gris claro (Slate 400) para detalles */
+    
+    /* Bordes */
+    --border-light: #E2E8F0;    /* Slate 200 */
+    
+    /* Sombras Suaves (Estilo Apple/Stripe) */
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+html, body { height: 100%; margin: 0; }
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-body);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================
+   2. COMPONENTES DE TARJETA
+   ========================================= */
+.clean-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px; /* Bordes redondeados modernos */
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.clean-card:hover {
+    box-shadow: var(--shadow-hover);
+    border-color: #CBD5E1;
+}
+
+.card-header-clean {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    background-color: #FFFFFF;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* =========================================
+   3. FORMULARIOS LIMPIOS
+   ========================================= */
+.form-control, .form-select {
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: var(--text-main);
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-red);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); /* Anillo rojo muy suave */
+    outline: none;
+}
+
+.input-group-text {
+    background-color: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: var(--text-muted);
+}
+
+/* =========================================
+   4. TABLAS
+   ========================================= */
+.table-clean {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table-clean thead th {
+    background-color: #F8FAFC;
+    color: var(--text-body);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    letter-spacing: 0.05em;
+}
+.table-clean tbody td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+.table-clean tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+/* =========================================
+   5. BOTONES
+   ========================================= */
+.btn-red {
+    background-color: var(--brand-red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+.btn-red:hover { background-color: var(--brand-red-hover); color: white; }
+
+/* =========================================
+   6. UTILIDADES
+   ========================================= */
+.text-main { color: var(--text-main) !important; }
+.text-red { color: var(--brand-red) !important; }
+.border-l-red { border-left: 4px solid var(--brand-red); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Finalizar - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 border-b border-slate-200 pb-6">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all shadow-sm">
+                <i class="bi bi-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h6 class="text-emerald-600 font-bold text-xs tracking-widest uppercase mb-0.5">Flujo de Trabajo</h6>
+                <h2 class="text-2xl font-bold text-slate-800">Cierre de Inspecciones</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARRA DE HERRAMIENTAS (FILTROS) -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-8 shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-center">
+        
+        <!-- Pestañas de Estado -->
+        <div class="flex p-1 bg-slate-100 rounded-xl w-full lg:w-auto">
+            <a href="?estado=todos{% if query %}&q={{ query }}{% endif %}" class="flex-1 px-4 py-2 rounded-lg text-xs font-bold text-center transition-all {% if estado_filter == 'todos' %}bg-white text-slate-800 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                Todos
+            </a>
+            <a href="?estado=ruta{% if query %}&q={{ query }}{% endif %}" class="flex-1 px-4 py-2 rounded-lg text-xs font-bold text-center transition-all {% if estado_filter == 'ruta' %}bg-white text-emerald-600 shadow-sm{% else %}text-slate-500 hover:text-emerald-600{% endif %}">
+                En Ruta
+            </a>
+            <a href="?estado=informe{% if query %}&q={{ query }}{% endif %}" class="flex-1 px-4 py-2 rounded-lg text-xs font-bold text-center transition-all {% if estado_filter == 'informe' %}bg-white text-blue-600 shadow-sm{% else %}text-slate-500 hover:text-blue-600{% endif %}">
+                Falta Informe
+            </a>
+        </div>
+
+        <!-- Buscador -->
+        <form method="GET" class="relative w-full lg:w-96">
+            <input type="hidden" name="estado" value="{{ estado_filter }}">
+            <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" name="q" value="{{ query }}" class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all placeholder-slate-400" placeholder="Buscar local, dirección o RUC...">
+        </form>
+    </div>
+
+    <!-- GRID DE TARJETAS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for turno in turnos %}
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-apple hover:shadow-lg transition-all group relative overflow-hidden flex flex-col h-full">
+            
+            <!-- Banda Superior de Estado -->
+            <div class="h-1.5 w-full {% if turno.estado == 'EJECUTADA' %}bg-blue-500{% else %}bg-emerald-500{% endif %}"></div>
+
+            <!-- Cuerpo -->
+            <div class="p-5 flex-1 flex flex-col">
+                
+                <!-- Header Tarjeta: Fecha y Estado -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-center min-w-[45px]">
+                            <span class="block text-lg font-bold text-slate-800 leading-none">{{ turno.agenda.fecha|date:"d" }}</span>
+                            <span class="block text-[0.6rem] text-slate-400 uppercase font-bold">{{ turno.agenda.fecha|date:"M" }}</span>
+                        </div>
+                        <span class="text-xs text-slate-500 font-medium">{{ turno.get_bloque_display }}</span>
+                    </div>
+                    
+                    {% if turno.estado == 'EJECUTADA' %}
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md border border-blue-100 uppercase tracking-wide">
+                            Informe Pendiente
+                        </span>
+                    {% else %}
+                        <span class="px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-md border border-emerald-100 uppercase tracking-wide">
+                            En Ruta
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Datos del Local -->
+                <h3 class="text-lg font-bold text-slate-800 mb-1 truncate" title="{{ turno.establecimiento.nombre_comercial }}">
+                    {{ turno.establecimiento.nombre_comercial }}
+                </h3>
+                
+                <div class="space-y-2 mb-5">
+                    <p class="text-xs text-slate-500 flex items-start gap-2">
+                        <i class="bi bi-geo-alt mt-0.5 text-slate-400"></i>
+                        <span class="line-clamp-2">{{ turno.establecimiento.direccion }}</span>
+                    </p>
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-50">
+                        <p class="text-xs text-slate-500 flex items-center gap-1.5">
+                            <i class="bi bi-person text-slate-400"></i> {{ turno.establecimiento.propietario.first_name|truncatechars:15 }}
+                        </p>
+                        {% if turno.telefono_contacto %}
+                        <a href="tel:{{ turno.telefono_contacto }}" class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full hover:bg-emerald-100 transition-colors">
+                            <i class="bi bi-telephone-fill mr-1"></i> {{ turno.telefono_contacto }}
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Acciones (Footer Sticky al fondo de la tarjeta) -->
+                <div class="mt-auto pt-4 border-t border-slate-100">
+                    {% if turno.estado == 'EJECUTADA' %}
+                        <!-- Formulario Finalizar -->
+                        <form action="{% url 'finalizar_turno' turno.id %}" method="POST" class="flex gap-2">
+                            {% csrf_token %}
+                            <div class="relative flex-1">
+                                <i class="bi bi-hash absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+                                <input type="text" name="numero_formulario" 
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-2 py-2 text-xs text-slate-700 focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-slate-400" 
+                                       placeholder="N° Formulario" required autocomplete="off">
+                            </div>
+                            <button type="submit" class="px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md transition-all flex items-center gap-1">
+                                Guardar <i class="bi bi-check2"></i>
+                            </button>
+                        </form>
+                    {% else %}
+                        <!-- Botones de Campo -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <form action="{% url 'marcar_ejecutada' turno.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                                    <i class="bi bi-check-circle-fill"></i> Visitado
+                                </button>
+                            </form>
+                            <form action="{% url 'reportar_ausencia' turno.id %}" method="POST" onsubmit="return confirm('¿Confirmar AUSENTE?');">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full py-2 bg-white border border-slate-200 text-slate-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                                    <i class="bi bi-shop-window"></i> Ausente
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-20 text-center">
+            <div class="inline-flex p-4 rounded-full bg-slate-50 mb-4 text-emerald-500 border border-emerald-100">
+                <i class="bi bi-check2-all text-4xl"></i>
+            </div>
+            <h3 class="text-slate-800 font-bold text-lg">Todo al día</h3>
+            <p class="text-slate-400 text-sm mt-1">No hay inspecciones pendientes con los filtros actuales.</p>
+            {% if query or estado_filter != 'todos' %}
+            <a href="?" class="text-brand-red text-xs font-bold hover:underline mt-2 inline-block">Limpiar filtros</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- PAGINACIÓN -->
+    {% if turnos.has_other_pages %}
+    <div class="mt-8 flex justify-center">
+        <nav class="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+            {% if turnos.has_previous %}
+            <a href="?page={{ turnos.previous_page_number }}&q={{ query }}&estado={{ estado_filter }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-brand-red transition-colors">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            <span class="px-3 text-xs font-bold text-slate-600">
+                Página {{ turnos.number }} / {{ turnos.paginator.num_pages }}
+            </span>
+
+            {% if turnos.has_next %}
+            <a href="?page={{ turnos.next_page_number }}&q={{ query }}&estado={{ estado_filter }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-brand-red transition-colors">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

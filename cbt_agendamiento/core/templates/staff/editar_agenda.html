@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Editar Agenda - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex items-center mb-6 border-b border-slate-200 pb-4">
+        <a href="{% url 'habilitar_agenda' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-0.5">Gestión de Cupos</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Modificar Disponibilidad</h2>
+        </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden">
+        
+        <!-- CONTEXTO DE LA FECHA -->
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-amber-500 text-2xl shadow-sm">
+                    <i class="bi bi-calendar-week"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">{{ agenda.fecha|date:"l, d \d\e F Y" }}</h3>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Zona Asignada</span>
+                </div>
+            </div>
+            <span class="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full border border-blue-100">
+                {{ agenda.get_parroquia_destino_display }}
+            </span>
+        </div>
+
+        <!-- FORMULARIO -->
+        <div class="p-8">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- SECCIÓN 1: CAPACIDAD -->
+                <div class="mb-8">
+                    <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="bi bi-people-fill"></i> Capacidad Operativa
+                    </h6>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- MAÑANA -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Cupos Mañana</label>
+                            <div class="relative group">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-amber-500 group-focus-within:text-amber-600 transition-colors">
+                                    <i class="bi bi-brightness-high-fill text-lg"></i>
+                                </span>
+                                <input type="number" name="capacidad_manana" value="{{ form.capacidad_manana.value }}" 
+                                       class="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all" required>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1.5 pl-1">Horario: 09:00 - 12:30</p>
+                        </div>
+
+                        <!-- TARDE -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Cupos Tarde</label>
+                            <div class="relative group">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-indigo-500 group-focus-within:text-indigo-600 transition-colors">
+                                    <i class="bi bi-moon-stars-fill text-lg"></i>
+                                </span>
+                                <input type="number" name="capacidad_tarde" value="{{ form.capacidad_tarde.value }}" 
+                                       class="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" required>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1.5 pl-1">Horario: 14:45 - 16:30</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 my-6"></div>
+
+                <!-- SECCIÓN 2: ESTADO (SWITCH) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <label class="text-sm font-bold text-slate-800 block cursor-pointer">Estado del Día</label>
+                        <p class="text-xs text-slate-500 mt-0.5 max-w-xs">
+                            Si desactiva esta opción, la fecha aparecerá como "No Disponible" para los ciudadanos.
+                        </p>
+                    </div>
+                    
+                    <!-- Custom Toggle Switch (Corrected) -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <!-- El input ya tiene la clase 'peer sr-only' desde forms.py -->
+                        {{ form.cupos_habilitados }}
+                        
+                        <!-- El div reacciona al peer (input) -->
+                        <div class="w-14 h-7 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <!-- ACCIONES -->
+                <div class="grid grid-cols-2 gap-4 mt-8">
+                    <a href="{% url 'habilitar_agenda' %}" class="flex items-center justify-center px-6 py-3 border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-brand-red text-white font-bold rounded-xl shadow-lg shadow-slate-900/20 transition-all text-sm">
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

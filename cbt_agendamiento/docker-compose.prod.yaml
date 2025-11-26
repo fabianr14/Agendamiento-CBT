@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: always
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: /app/entrypoint.sh gunicorn --bind 0.0.0.0:8000 config.wsgi:application --workers 3
+    expose:
+      - 8000
+    ports:
+      - "80:8000" # En Lightsail, el puerto externo 80 apunta al 8000 interno
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DEBUG=0  # ¡CRÍTICO! Apaga el modo debug
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DATABASE_URL=postgis://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      # Configuración AWS SES (Correo)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SES_REGION_NAME=${AWS_SES_REGION_NAME}
+      # Configuración CSRF (Para HTTPS)
+      - CSRF_TRUSTED_ORIGINS=https://${DOMAIN_NAME}
+
+volumes:
+  postgres_data_prod:

@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% block title %}Ruta Táctica - CBT{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+<style>
+    .leaflet-routing-container { display: none !important; }
+    
+    @media print {
+        @page { margin: 0.5cm; size: A4 portrait; }
+        body { background: white !important; color: black !important; -webkit-print-color-adjust: exact !important; }
+        nav, header, .no-print, .btn, footer { display: none !important; }
+        .print-container { display: block !important; width: 100% !important; }
+        .map-wrapper { height: 450px !important; width: 100% !important; border: 2px solid #000 !important; margin-bottom: 20px; }
+        .stop-list { display: block !important; }
+        .stop-item { border-bottom: 1px solid #ccc; padding: 10px 0; page-break-inside: avoid; }
+        .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+    }
+    .print-header { display: none; }
+</style>
+
+<div class="max-w-7xl mx-auto print-container">
+    
+    <!-- ENCABEZADO (NO IMPRIMIBLE) -->
+    <div class="flex flex-col xl:flex-row justify-between items-end mb-6 border-b border-slate-200 pb-4 gap-4 no-print">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all shadow-sm">
+                <i class="bi bi-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-0.5">Logística Operativa</h6>
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    Hoja de Ruta
+                </h2>
+            </div>
+        </div>
+
+        <!-- BARRA DE HERRAMIENTAS -->
+        <div class="flex flex-wrap items-center gap-3 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+            
+            <!-- SELECTOR DE ZONA (CORRECCIÓN CLAVE) -->
+            <div class="flex bg-slate-100 rounded-lg p-1">
+                <a href="?bloque={{ bloque_actual }}&fecha={{ hoy|date:'Y-m-d' }}&zona=NORTE" 
+                   class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 {% if zona_actual == 'NORTE' %}bg-white text-red-600 shadow-sm{% else %}text-slate-400 hover:text-slate-600{% endif %}">
+                    <i class="bi bi-compass"></i> Norte
+                </a>
+                <a href="?bloque={{ bloque_actual }}&fecha={{ hoy|date:'Y-m-d' }}&zona=SUR" 
+                   class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 {% if zona_actual == 'SUR' %}bg-white text-blue-600 shadow-sm{% else %}text-slate-400 hover:text-slate-600{% endif %}">
+                    <i class="bi bi-compass"></i> Sur
+                </a>
+            </div>
+
+            <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+            <!-- Selector de Fecha -->
+            <form method="GET" id="formFecha" class="flex items-center">
+                <input type="hidden" name="zona" value="{{ zona_actual }}">
+                <input type="hidden" name="bloque" value="{{ bloque_actual }}">
+                <input type="date" name="fecha" 
+                       class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-brand-red focus:border-brand-red block p-2 outline-none hover:bg-white transition-colors cursor-pointer" 
+                       value="{{ hoy|date:'Y-m-d' }}" 
+                       onchange="document.getElementById('formFecha').submit()">
+            </form>
+
+            <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+            <!-- Selector de Jornada -->
+            <div class="flex bg-slate-100 rounded-lg p-1">
+                <a href="?bloque=MANANA&zona={{ zona_actual }}&fecha={{ hoy|date:'Y-m-d' }}" 
+                   class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 {% if bloque_actual == 'MANANA' %}bg-white text-amber-600 shadow-sm{% else %}text-slate-400 hover:text-slate-600{% endif %}">
+                    <i class="bi bi-brightness-high-fill"></i> Mañana
+                </a>
+                <a href="?bloque=TARDE&zona={{ zona_actual }}&fecha={{ hoy|date:'Y-m-d' }}" 
+                   class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 {% if bloque_actual == 'TARDE' %}bg-white text-indigo-600 shadow-sm{% else %}text-slate-400 hover:text-slate-600{% endif %}">
+                    <i class="bi bi-moon-stars-fill"></i> Tarde
+                </a>
+            </div>
+
+            <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+            <button onclick="imprimirMapa()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                <i class="bi bi-printer"></i> <span class="hidden sm:inline">Imprimir</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ENCABEZADO IMPRESIÓN -->
+    <div class="print-header">
+        <h1 class="text-2xl font-bold uppercase">Cuerpo de Bomberos de Tulcán</h1>
+        <h3 class="text-lg">Hoja de Ruta Operativa</h3>
+        <div class="flex justify-center gap-4 mt-2 text-sm">
+            <p><strong>Fecha:</strong> {{ hoy|date:"d/m/Y" }}</p>
+            <p><strong>Zona:</strong> {{ zona_actual }}</p>
+            <p><strong>Jornada:</strong> {{ bloque_actual }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LISTA DE PARADAS -->
+        <div class="lg:col-span-4 order-2 lg:order-1">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden stop-list">
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">Itinerario</h3>
+                    <span class="bg-white border border-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ ruta|length }} Puntos</span>
+                </div>
+                
+                <div class="overflow-y-auto custom-scrollbar p-0" style="max-height: 600px;">
+                    <!-- ESTACIÓN -->
+                    <div class="flex gap-4 p-4 border-b border-slate-100 bg-slate-50/30 stop-item">
+                        <div class="flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-sm font-bold shadow-sm z-10">
+                                <i class="bi bi-house-door-fill"></i>
+                            </div>
+                            <div class="h-full w-0.5 bg-slate-200 -mb-4"></div>
+                        </div>
+                        <div>
+                            <h6 class="text-sm font-bold text-slate-800">Estación Central CBT</h6>
+                            <p class="text-xs text-slate-500">Punto de Partida</p>
+                        </div>
+                    </div>
+
+                    <!-- PARADAS -->
+                    {% for turno in ruta %}
+                    <div class="flex gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors stop-item group">
+                        <div class="flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-white border-2 border-brand-red text-brand-red flex items-center justify-center text-xs font-bold shadow-sm z-10 group-hover:bg-brand-red group-hover:text-white transition-colors">
+                                {{ forloop.counter }}
+                            </div>
+                            {% if not forloop.last %}
+                            <div class="h-full w-0.5 bg-slate-200 -mb-4"></div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <h6 class="text-sm font-bold text-slate-800 group-hover:text-brand-red transition-colors">{{ turno.establecimiento.nombre_comercial }}</h6>
+                                {% if turno.hora_estimada %}
+                                    <span class="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 rounded">{{ turno.hora_estimada|time:"H:i" }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if turno.referencia_ubicacion %}
+                            <div class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md text-[10px] mt-1 border border-amber-100 inline-block">
+                                <i class="bi bi-info-circle-fill mr-1"></i> {{ turno.referencia_ubicacion }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                                <span class="flex items-center gap-1"><i class="bi bi-geo-alt"></i> {{ turno.establecimiento.direccion|truncatechars:25 }}</span>
+                                {% if turno.telefono_contacto %}
+                                <span class="flex items-center gap-1"><i class="bi bi-telephone"></i> {{ turno.telefono_contacto }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-8 text-center">
+                        <i class="bi bi-map text-3xl text-slate-300 mb-2 block"></i>
+                        <p class="text-sm text-slate-500">No hay ruta asignada para hoy.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- MAPA -->
+        <div class="lg:col-span-8 order-1 lg:order-2">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-1 map-wrapper">
+                <div id="map" class="rounded-xl overflow-hidden w-full h-[600px] z-0 bg-slate-100 relative">
+                    <!-- Loader simple si tarda -->
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                        <span class="text-slate-400 text-sm">Cargando mapa...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+<script>
+    // Coordenadas Estación (Tulcán)
+    // Usamos unlocalize para asegurar formato 0.00 no 0,00
+    const latEstacion = {{ 0.8234943|unlocalize }};
+    const lonEstacion = {{ -77.7071697|unlocalize }};
+
+    var map = L.map('map').setView([latEstacion, lonEstacion], 14);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        attribution: '© OSM',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Marcador de la Estación (Siempre visible)
+    var stationIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+    
+    L.marker([latEstacion, lonEstacion], {icon: stationIcon}).addTo(map).bindPopup("<b>Estación CBT</b><br>Inicio de Operaciones");
+
+    // Puntos de la Ruta
+    var waypoints = [L.latLng(latEstacion, lonEstacion)];
+
+    {% for turno in ruta %}
+        {% if turno.establecimiento.ubicacion %}
+            waypoints.push(L.latLng(
+                {{ turno.establecimiento.ubicacion.y|unlocalize }}, 
+                {{ turno.establecimiento.ubicacion.x|unlocalize }}
+            ));
+        {% endif %}
+    {% endfor %}
+
+    // Generar Ruta solo si hay destinos
+    {% if ruta %}
+        if (waypoints.length > 1) {
+            var control = L.Routing.control({
+                waypoints: waypoints,
+                routeWhileDragging: false,
+                show: false,
+                addWaypoints: false, 
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                lineOptions: { 
+                    styles: [{color: '#DC2626', opacity: 0.8, weight: 5}] 
+                },
+                createMarker: function(i, wp, nWps) {
+                    if (i === 0) return null; // Ya pusimos la estación manualmente
+                    
+                    return L.marker(wp.latLng, {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                        })
+                    }).bindPopup("<b>Parada #" + i + "</b><br>{{ turno.establecimiento.nombre_comercial }}");
+                }
+            }).addTo(map);
+        }
+    {% endif %}
+
+    function imprimirMapa() {
+        map.invalidateSize();
+        if (waypoints.length > 0) {
+            var group = new L.featureGroup(waypoints.map(p => L.marker(p)));
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+        setTimeout(function() { window.print(); }, 800);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block title %}Solicitudes - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4 border-b border-slate-200 pb-6">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all shadow-sm">
+                <i class="bi bi-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h6 class="text-amber-500 font-bold text-xs tracking-widest uppercase mb-0.5">Gestión de Trámites</h6>
+                <h2 class="text-2xl font-bold text-slate-800">Solicitudes Entrantes</h2>
+            </div>
+        </div>
+        
+        <!-- Buscador Global -->
+        <div class="relative w-full md:w-72 group">
+            <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-red transition-colors"></i>
+            <input type="text" id="filterInput" class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder-slate-400 shadow-sm" placeholder="Buscar local, propietario...">
+        </div>
+    </div>
+
+    <!-- BARRA DE FILTROS INTELIGENTES (NUEVO) -->
+    <div class="flex flex-wrap gap-2 mb-8">
+        <button class="filter-chip active px-4 py-1.5 rounded-full text-xs font-bold border transition-all shadow-sm bg-slate-800 text-white border-slate-800" data-filter="all">
+            Todas
+        </button>
+        <!-- Estos filtros se pueden implementar vía backend en el futuro, ahora filtran visualmente -->
+        <button class="filter-chip px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-red-400 hover:text-red-600 transition-all shadow-sm" data-filter="urgente">
+            <i class="bi bi-exclamation-circle-fill mr-1"></i> Urgentes / Hoy
+        </button>
+        <button class="filter-chip px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm" data-filter="manana">
+            Mañana (AM)
+        </button>
+        <button class="filter-chip px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-indigo-400 hover:text-indigo-600 transition-all shadow-sm" data-filter="tarde">
+            Tarde (PM)
+        </button>
+    </div>
+
+    <!-- LISTA DE TARJETAS DETALLADAS -->
+    <div class="space-y-4" id="requestsGrid">
+        {% for turno in pendientes %}
+        <!-- Tarjeta Inteligente -->
+        <div class="group relative bg-white border border-slate-200 rounded-2xl p-0 shadow-sm hover:shadow-md transition-all search-item overflow-hidden flex flex-col md:flex-row items-stretch"
+             data-bloque="{{ turno.bloque }}"
+             data-fecha="{{ turno.agenda.fecha|date:'Y-m-d' }}">
+            
+            <!-- Banda de Estado (Semáforo) -->
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 md:w-1 
+                {% if turno.agenda.fecha <= hoy %}bg-red-500
+                {% elif turno.agenda.fecha > hoy %}bg-emerald-400
+                {% else %}bg-slate-300{% endif %}">
+            </div>
+
+            <!-- 1. Columna FECHA -->
+            <div class="w-full md:w-40 bg-slate-50/50 border-b md:border-b-0 md:border-r border-slate-100 p-5 flex flex-row md:flex-col items-center justify-between md:justify-center gap-3 text-center">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">{{ turno.agenda.fecha|date:"F" }}</span>
+                    <span class="text-3xl font-black text-slate-800 leading-none block">{{ turno.agenda.fecha|date:"d" }}</span>
+                    <span class="text-[10px] font-mono text-slate-400 block mt-1">{{ turno.agenda.fecha|date:"Y" }}</span>
+                </div>
+                <div class="md:mt-3">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-bold uppercase
+                        {% if turno.bloque == 'MANANA' %}bg-amber-50 text-amber-700 border-amber-100{% else %}bg-indigo-50 text-indigo-700 border-indigo-100{% endif %}">
+                        <i class="bi {% if turno.bloque == 'MANANA' %}bi-brightness-high{% else %}bi-moon-stars{% endif %}"></i>
+                        {{ turno.get_bloque_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- 2. Columna DETALLES (Rica en Info) -->
+            <div class="flex-1 p-5 flex flex-col justify-center">
+                <!-- Tags Superiores -->
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1">
+                        <i class="bi bi-shop"></i> {{ turno.establecimiento.tipo.nombre }}
+                    </span>
+                    <span class="h-3 w-px bg-slate-200"></span>
+                    <span class="text-[10px] font-bold uppercase tracking-wide text-blue-500 flex items-center gap-1">
+                        <i class="bi bi-geo"></i> {{ turno.establecimiento.get_parroquia_display }}
+                    </span>
+                    
+                    {% if turno.agenda.fecha <= hoy %}
+                    <span class="ml-auto text-[9px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 animate-pulse">
+                        PRIORIDAD ALTA
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Títulos -->
+                <h3 class="text-lg font-bold text-slate-800 search-text mb-1 leading-tight">
+                    {{ turno.establecimiento.nombre_comercial }}
+                </h3>
+                <p class="text-xs text-slate-500 flex items-center gap-1.5 mb-3">
+                    <i class="bi bi-person-circle text-slate-400"></i> {{ turno.establecimiento.propietario.first_name }} {{ turno.establecimiento.propietario.last_name }}
+                    <span class="text-slate-300">|</span>
+                    <span class="font-mono">{{ turno.establecimiento.propietario.perfil.ruc }}</span>
+                </p>
+
+                <!-- Info Extra (Dirección y Teléfono) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-slate-50 mt-auto">
+                    <div class="flex items-start gap-2 text-xs text-slate-500">
+                        <i class="bi bi-geo-alt mt-0.5 text-slate-400"></i>
+                        <span class="line-clamp-1">{{ turno.establecimiento.direccion }}</span>
+                    </div>
+                    {% if turno.telefono_contacto %}
+                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                        <i class="bi bi-whatsapp mt-0.5 text-emerald-500"></i>
+                        <span class="font-mono">{{ turno.telefono_contacto }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 3. Columna ACCIONES -->
+            <div class="w-full md:w-auto p-4 bg-slate-50/30 border-t md:border-t-0 md:border-l border-slate-100 flex flex-row md:flex-col items-center justify-center gap-3">
+                <a href="{% url 'gestionar_turno' turno.id 'confirmar' %}" class="flex-1 md:flex-none w-full md:w-32 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="bi bi-check-lg text-sm"></i> Aprobar
+                </a>
+                <a href="{% url 'gestionar_turno' turno.id 'rechazar' %}" class="flex-1 md:flex-none w-full md:w-32 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 font-bold text-xs transition-all flex items-center justify-center gap-2" onclick="return confirm('¿Rechazar esta solicitud?');">
+                    <i class="bi bi-x-lg text-sm"></i> Rechazar
+                </a>
+            </div>
+
+        </div>
+        {% empty %}
+        <div class="text-center py-24 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
+                <i class="bi bi-inbox text-4xl"></i>
+            </div>
+            <h3 class="text-slate-800 font-bold text-lg">Bandeja Limpia</h3>
+            <p class="text-slate-400 text-sm">No hay solicitudes pendientes de revisión.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- CONTROLES DE PAGINACIÓN -->
+    {% if pendientes.has_other_pages %}
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 pt-6 gap-4">
+        <span class="text-xs text-slate-400 font-medium bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
+            Página <span class="text-slate-800 font-bold">{{ pendientes.number }}</span> de {{ pendientes.paginator.num_pages }}
+        </span>
+        
+        <div class="flex gap-2">
+            {% if pendientes.has_previous %}
+            <a href="?page={{ pendientes.previous_page_number }}" class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-red transition-all shadow-sm flex items-center gap-1">
+                <i class="bi bi-chevron-left"></i> Anterior
+            </a>
+            {% else %}
+            <button disabled class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-300 cursor-not-allowed flex items-center gap-1">
+                <i class="bi bi-chevron-left"></i> Anterior
+            </button>
+            {% endif %}
+            
+            {% if pendientes.has_next %}
+            <a href="?page={{ pendientes.next_page_number }}" class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-red transition-all shadow-sm flex items-center gap-1">
+                Siguiente <i class="bi bi-chevron-right"></i>
+            </a>
+            {% else %}
+            <button disabled class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-300 cursor-not-allowed flex items-center gap-1">
+                Siguiente <i class="bi bi-chevron-right"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estado Sin Resultados (Filtro) -->
+    <div id="noResults" class="hidden text-center py-20">
+        <i class="bi bi-search text-3xl text-slate-300 mb-2 block"></i>
+        <p class="text-slate-500 font-medium">No se encontraron solicitudes con ese criterio.</p>
+        <button onclick="resetFilters()" class="text-brand-red text-xs font-bold hover:underline mt-2">Limpiar filtros</button>
+    </div>
+
+</div>
+
+<script>
+    // BUSCADOR EN TIEMPO REAL
+    const filterInput = document.getElementById('filterInput');
+    const noResults = document.getElementById('noResults');
+    const items = document.querySelectorAll('.search-item');
+
+    filterInput.addEventListener('keyup', function() {
+        const term = this.value.toLowerCase();
+        let visibleCount = 0;
+
+        items.forEach(card => {
+            const text = card.innerText.toLowerCase(); // Busca en todo el texto de la tarjeta
+            if(text.includes(term)) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        noResults.classList.toggle('hidden', visibleCount > 0);
+    });
+
+    function resetFilters() {
+        filterInput.value = '';
+        items.forEach(c => c.style.display = '');
+        noResults.classList.add('hidden');
+    }
+
+    // FILTROS RÁPIDOS (JS Simple para demo, idealmente sería backend con paginación)
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Reset styles
+            document.querySelectorAll('.filter-chip').forEach(b => {
+                b.classList.remove('bg-slate-800', 'text-white', 'border-slate-800');
+                b.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            });
+            // Active style
+            e.target.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            e.target.classList.add('bg-slate-800', 'text-white', 'border-slate-800');
+            
+            const filter = e.target.dataset.filter;
+            const today = new Date().toISOString().split('T')[0];
+            let visibleCount = 0;
+
+            items.forEach(card => {
+                const date = card.dataset.fecha;
+                const bloque = card.dataset.bloque; // MANANA / TARDE
+                
+                let show = false;
+                if(filter === 'all') show = true;
+                if(filter === 'urgente' && date <= today) show = true;
+                if(filter === 'manana' && bloque === 'MANANA') show = true;
+                if(filter === 'tarde' && bloque === 'TARDE') show = true;
+
+                if(show) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+             noResults.classList.toggle('hidden', visibleCount > 0);
+        });
+    });
+</script>
+{% endblock %}

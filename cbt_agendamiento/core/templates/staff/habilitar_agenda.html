@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% block title %}Gestión Agenda - CBT{% endblock %}
+
+{% block content %}
+<!-- ENCABEZADO -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 border-b border-slate-200 pb-6">
+    <div>
+        <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-1">Programación Operativa</h6>
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Gestión de Agenda Masiva</h1>
+    </div>
+    <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+        <i class="bi bi-calendar-week text-red-500"></i>
+        <span class="text-sm font-medium text-slate-600">Panel de Configuración</span>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- COLUMNA IZQUIERDA: HERRAMIENTAS (lg:col-span-4) -->
+    <div class="lg:col-span-4 space-y-6">
+        
+        <!-- 1. TARJETA DE CONFIGURACIÓN -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <button class="w-full px-5 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors text-left focus:outline-none group" 
+                    type="button" 
+                    onclick="toggleConfigPanel()">
+                <h6 class="text-slate-500 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                    <i class="bi bi-sliders text-blue-500"></i> Valores por Defecto
+                </h6>
+                <i class="bi bi-chevron-down text-slate-400 text-sm transition-transform duration-300" id="iconConfig"></i>
+            </button>
+            
+            <div id="configPanel" class="hidden border-t border-slate-200 bg-white">
+                <div class="p-5">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="actualizar_config" value="1">
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Cupos Mañana</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-brightness-high"></i></span>
+                                    <input type="number" name="def_capacidad_manana" value="{{ config.def_capacidad_manana }}" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Cupos Tarde</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-moon-stars"></i></span>
+                                    <input type="number" name="def_capacidad_tarde" value="{{ config.def_capacidad_tarde }}" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="w-full mt-4 py-2.5 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-colors shadow-sm flex items-center justify-center gap-2">
+                            <i class="bi bi-save"></i> Actualizar Defectos
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. GENERADOR MASIVO -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-6">
+            <div class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center border border-amber-100 shadow-sm">
+                    <i class="bi bi-robot text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">Generar Turnos</h3>
+                    <p class="text-xs text-slate-500">Creación automática por lotes</p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="crear_agenda" value="1">
+                
+                <!-- Rango de Fechas -->
+                <h6 class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">1. Rango de Fechas</h6>
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">DESDE</label>
+                        <input type="date" name="fecha_inicio" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all cursor-pointer" min="{{ hoy_str }}" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">HASTA</label>
+                        <input type="date" name="fecha_fin" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all cursor-pointer" min="{{ hoy_str }}" required>
+                    </div>
+                </div>
+
+                <!-- Días Hábiles -->
+                <h6 class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">2. Días Operativos</h6>
+                <div class="flex justify-between gap-1 mb-6 overflow-x-auto">
+                    {% for dia in "LMMJVSD" %}
+                    <div class="flex-1 min-w-[30px]">
+                        <input type="checkbox" class="peer hidden" name="dias_semana" value="{{ forloop.counter0 }}" id="d{{ forloop.counter0 }}" {% if forloop.counter0 < 5 %}checked{% endif %}>
+                        <label for="d{{ forloop.counter0 }}" class="block text-center py-2 rounded-lg border border-slate-200 bg-white text-slate-500 text-xs font-bold cursor-pointer transition-all hover:bg-slate-50 peer-checked:bg-brand-red peer-checked:text-white peer-checked:border-brand-red peer-checked:shadow-md select-none">
+                            {{ dia }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Selección de Zonas -->
+                <h6 class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">3. Zonas a Habilitar</h6>
+                <div class="border border-slate-200 rounded-xl overflow-hidden mb-6">
+                    <div class="max-h-48 overflow-y-auto custom-scrollbar bg-slate-50/50">
+                        
+                        <!-- Grupo Urbano -->
+                        <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 sticky top-0 z-10 flex items-center gap-2">
+                            <input type="checkbox" class="rounded border-slate-300 text-brand-red focus:ring-brand-red focus:ring-offset-0 w-4 h-4 cursor-pointer" onchange="toggleGroup(this, 'urbana')">
+                            <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Zona Urbana</span>
+                        </div>
+                        <div class="p-2 space-y-1 bg-white">
+                            {% for codigo, nombre in zonas_urbanas %}
+                            <label class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <input type="checkbox" name="zonas" value="{{ codigo }}" class="check-urbana rounded border-slate-300 text-brand-red focus:ring-brand-red w-4 h-4 cursor-pointer">
+                                <span class="text-sm text-slate-600 group-hover:text-slate-900">{{ nombre }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Grupo Rural -->
+                        <div class="bg-slate-100 px-4 py-2 border-y border-slate-200 sticky top-0 z-10 flex items-center gap-2">
+                            <input type="checkbox" class="rounded border-slate-300 text-brand-red focus:ring-brand-red focus:ring-offset-0 w-4 h-4 cursor-pointer" onchange="toggleGroup(this, 'rural')">
+                            <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Zona Rural</span>
+                        </div>
+                        <div class="p-2 space-y-1 bg-white">
+                            {% for codigo, nombre in zonas_rurales %}
+                            <label class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <input type="checkbox" name="zonas" value="{{ codigo }}" class="check-rural rounded border-slate-300 text-brand-red focus:ring-brand-red w-4 h-4 cursor-pointer">
+                                <span class="text-sm text-slate-600 group-hover:text-slate-900">{{ nombre|slice:"7:" }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-brand-red hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2" onclick="return confirm('¿Confirmar creación masiva de agenda?');">
+                    <i class="bi bi-lightning-charge-fill"></i> Generar Agenda
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: LISTADO (lg:col-span-8) -->
+    <div class="lg:col-span-8">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden flex flex-col h-[700px]">
+            
+            <!-- BARRA DE FILTRO RÁPIDO -->
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                    <i class="bi bi-table text-emerald-500"></i> Agendas Activas
+                </h3>
+                
+                <div class="relative w-full sm:w-64">
+                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="searchInput" class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all placeholder-slate-400" placeholder="Filtrar fecha o zona...">
+                </div>
+            </div>
+            
+            <div class="overflow-y-auto flex-1 custom-scrollbar bg-white">
+                <table class="w-full text-left text-sm responsive-table">
+                    <!-- HEADER OCULTO EN MÓVIL -->
+                    <thead class="bg-slate-50 text-slate-500 sticky top-0 z-10 shadow-sm border-b border-slate-200 hidden md:table-header-group">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider">Fecha</th>
+                            <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider">Zona</th>
+                            <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider text-center">Cupos (M/T)</th>
+                            <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider text-center">Estado</th>
+                            <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider text-right"></th>
+                        </tr>
+                    </thead>
+                    
+                    <!-- CUERPO RESPONSIVE -->
+                    <tbody class="divide-y divide-slate-100 block md:table-row-group space-y-4 md:space-y-0 p-4 md:p-0">
+                        {% for agenda in agendas %}
+                        <!-- Fila adaptable: Block en móvil, Table-row en Desktop -->
+                        <tr class="hover:bg-slate-50 transition-colors search-row group block md:table-row bg-white rounded-xl border border-slate-100 md:border-none shadow-sm md:shadow-none p-4 md:p-0 relative">
+                            
+                            <!-- FECHA -->
+                            <td class="px-6 py-2 md:py-4 whitespace-nowrap block md:table-cell">
+                                <div class="flex items-center justify-between md:block">
+                                    <div>
+                                        <span class="block text-sm font-bold text-slate-700 search-date">{{ agenda.fecha|date:"Y-m-d" }}</span>
+                                        <span class="block text-xs text-slate-400">{{ agenda.fecha|date:"l" }}</span>
+                                    </div>
+                                    <!-- Estado en Móvil (visible solo aquí) -->
+                                    <div class="md:hidden">
+                                        {% if agenda.cupos_habilitados %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVA</span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">CERRADA</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- ZONA -->
+                            <td class="px-6 py-2 md:py-4 block md:table-cell">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100 search-zone">
+                                    {{ agenda.get_parroquia_destino_display }}
+                                </span>
+                            </td>
+
+                            <!-- CUPOS -->
+                            <td class="px-6 py-2 md:py-4 text-left md:text-center block md:table-cell">
+                                <div class="flex justify-start md:justify-center gap-2">
+                                    <span class="flex items-center gap-1 px-2 py-1 rounded bg-amber-50 border border-amber-100 text-amber-700 text-[10px] font-mono font-bold" title="Mañana">
+                                        <i class="bi bi-brightness-high"></i> {{ agenda.capacidad_manana }}
+                                    </span>
+                                    <span class="flex items-center gap-1 px-2 py-1 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-mono font-bold" title="Tarde">
+                                        <i class="bi bi-moon"></i> {{ agenda.capacidad_tarde }}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- ESTADO (Desktop) -->
+                            <td class="px-6 py-4 text-center hidden md:table-cell">
+                                {% if agenda.cupos_habilitados %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                        ACTIVA
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
+                                        CERRADA
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- ACCIONES -->
+                            <td class="px-6 py-2 md:py-4 text-right block md:table-cell border-t md:border-t-0 border-slate-50 mt-2 md:mt-0 pt-2 md:pt-4">
+                                <a href="{% url 'editar_agenda' agenda.id %}" class="w-full md:w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:border-amber-500 hover:text-amber-500 transition-all shadow-sm group-hover:bg-amber-50" title="Modificar">
+                                    <i class="bi bi-pencil mr-2 md:mr-0"></i> <span class="md:hidden text-xs font-bold">Editar Cupos</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-16 text-center block md:table-cell">
+                                <div class="inline-flex p-4 rounded-full bg-slate-50 mb-3 text-slate-300">
+                                    <i class="bi bi-calendar-x text-4xl"></i>
+                                </div>
+                                <p class="text-slate-400 font-medium text-sm">No hay agendas programadas.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. TOGGLE PANEL DE CONFIGURACIÓN
+    function toggleConfigPanel() {
+        const panel = document.getElementById('configPanel');
+        const icon = document.getElementById('iconConfig');
+        
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+        } else {
+            panel.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+        }
+    }
+
+    // 2. BÚSQUEDA INSTANTÁNEA
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('.search-row');
+        
+        rows.forEach(row => {
+            let dateText = row.querySelector('.search-date').innerText.toLowerCase();
+            let zoneText = row.querySelector('.search-zone').innerText.toLowerCase();
+            
+            if (dateText.includes(filter) || zoneText.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // 3. CHECKBOXES GRUPALES
+    function toggleGroup(source, groupName) {
+        document.querySelectorAll('.check-' + groupName).forEach(cb => cb.checked = source.checked);
+    }
+</script>
+{% endblock %}

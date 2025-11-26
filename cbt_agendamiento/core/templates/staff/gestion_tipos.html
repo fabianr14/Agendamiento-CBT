@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Tipos de Local - CBT{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex items-center mb-8 pb-4 border-b border-slate-200">
+        <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-emerald-600 font-bold text-xs tracking-widest uppercase mb-0.5">Configuración del Sistema</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Tipos de Establecimiento</h2>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- COLUMNA IZQUIERDA: FORMULARIO (lg:col-span-4) -->
+        <div class="lg:col-span-5 xl:col-span-4">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple p-6 sticky top-24">
+                <div class="text-center mb-6">
+                    <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-3 text-emerald-600 border border-emerald-100 shadow-sm">
+                        <i class="bi bi-plus-lg text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800">Nuevo Giro</h3>
+                    <p class="text-slate-500 text-xs mt-1">Registre una categoría para clasificar los locales comerciales.</p>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nombre de la Categoría</label>
+                        <div class="relative group">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors"><i class="bi bi-tag-fill"></i></span>
+                            
+                            <!-- Input Manualmente Estilizado para consistencia -->
+                            <input type="text" name="nombre" 
+                                   class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all uppercase placeholder-slate-400" 
+                                   placeholder="EJ: FARMACIA" required autocomplete="off">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3 bg-slate-900 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-slate-900/20 hover:shadow-emerald-500/30 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 text-sm">
+                        <i class="bi bi-save"></i> Guardar Registro
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- COLUMNA DERECHA: LISTADO (lg:col-span-8) -->
+        <div class="lg:col-span-7 xl:col-span-8">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden flex flex-col h-[600px]">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="bi bi-list-ul text-emerald-500"></i> Catálogo Actual
+                    </h3>
+                    <span class="bg-white border border-slate-200 text-slate-600 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">{{ tipos|length }}</span>
+                </div>
+                
+                <div class="overflow-y-auto flex-1 custom-scrollbar p-2 space-y-1">
+                    <ul class="space-y-1">
+                        {% for tipo in tipos %}
+                        <li class="group flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-200">
+                            <!-- Info -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-colors">
+                                    <i class="bi bi-tag-fill"></i>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700 group-hover:text-slate-900">{{ tipo.nombre }}</span>
+                            </div>
+
+                            <!-- Botones de Acción (Visibles al Hover en Desktop) -->
+                            <div class="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'editar_tipo' tipo.id %}" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:text-amber-600 hover:border-amber-500 hover:bg-amber-50 flex items-center justify-center transition-all" title="Editar">
+                                    <i class="bi bi-pencil-fill text-xs"></i>
+                                </a>
+                                <a href="{% url 'eliminar_tipo' tipo.id %}" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-500 hover:bg-red-50 flex items-center justify-center transition-all" 
+                                   onclick="return confirm('¿Está seguro de eliminar la categoría {{ tipo.nombre }}? Esta acción no se puede deshacer.');" 
+                                   title="Eliminar">
+                                    <i class="bi bi-trash-fill text-xs"></i>
+                                </a>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="py-16 text-center">
+                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
+                                <i class="bi bi-tags text-3xl"></i>
+                            </div>
+                            <p class="text-slate-400 text-sm font-medium">No hay categorías registradas.</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Forzar Mayúsculas en tiempo real
+    document.querySelector('input[name="nombre"]').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+</script>
+{% endblock %}

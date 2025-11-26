@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% block title %}Ficha Técnica - CBT{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<!-- ENCABEZADO DE NAVEGACIÓN -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 border-b border-slate-200 pb-6">
+    <div class="flex items-center gap-4">
+        <a href="{% url 'directorio_establecimientos' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-0.5">Base de Datos</h6>
+            <h2 class="text-2xl font-bold text-slate-800">{{ local.nombre_comercial }}</h2>
+            <p class="text-sm text-slate-500 font-mono">RUC: {{ local.propietario.perfil.ruc }}</p>
+        </div>
+    </div>
+    
+    <!-- ACCIÓN PRINCIPAL: AGENDAR -->
+    <a href="{% url 'agendar_presencial_detalle' local.id %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-0.5">
+        <i class="bi bi-calendar-plus"></i> <span>Agendar Turno</span>
+    </a>
+</div>
+
+<!-- FORMULARIO GLOBAL -->
+<form method="POST">
+    {% csrf_token %}
+    
+    <!-- PESTAÑAS DE NAVEGACIÓN -->
+    <div class="bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-1 mb-6 w-full lg:w-auto inline-flex">
+        <button class="flex-1 px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 active-tab" id="datos-tab" type="button" onclick="switchTab('datos')">
+            <i class="bi bi-pencil-square"></i> Datos Generales
+        </button>
+        <button class="flex-1 px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-50" id="mapa-tab" type="button" onclick="switchTab('mapa')">
+            <i class="bi bi-geo-alt-fill"></i> Ubicación
+            {% if not local.ubicacion %}
+                <span class="w-2 h-2 rounded-full bg-amber-500 ml-1 animate-pulse"></span>
+            {% endif %}
+        </button>
+        <button class="flex-1 px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-50" id="historial-tab" type="button" onclick="switchTab('historial')">
+            <i class="bi bi-clock-history"></i> Historial
+        </button>
+    </div>
+
+    <!-- CONTENIDO DE LAS PESTAÑAS -->
+    <div class="tab-content relative">
+        
+        <!-- 1. PESTAÑA: DATOS GENERALES -->
+        <div id="content-datos" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Formulario de Edición -->
+            <div class="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-8 shadow-apple">
+                <div class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center"><i class="bi bi-shop"></i></div>
+                    <h3 class="font-bold text-slate-800 text-lg">Información del Establecimiento</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nombre Comercial</label>
+                        <input type="text" name="nombre_comercial" value="{{ local.nombre_comercial }}" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-800 font-bold focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all uppercase">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Razón Social</label>
+                        <input type="text" name="razon_social" value="{{ local.razon_social }}" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all uppercase">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Giro de Negocio</label>
+                        <div class="relative">
+                            <select name="tipo" class="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none appearance-none">
+                                {% for t in tipos %}
+                                    <option value="{{ t.id }}" {% if local.tipo.id == t.id %}selected{% endif %}>{{ t.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="bi bi-chevron-down absolute right-3 top-3 text-slate-400 pointer-events-none text-xs"></i>
+                        </div>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Parroquia / Zona</label>
+                        <div class="relative">
+                            <select name="parroquia" class="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none appearance-none">
+                                {% for codigo, nombre in parroquias %}
+                                    <option value="{{ codigo }}" {% if local.parroquia == codigo %}selected{% endif %}>{{ nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="bi bi-chevron-down absolute right-3 top-3 text-slate-400 pointer-events-none text-xs"></i>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Dirección</label>
+                        <input type="text" name="direccion" value="{{ local.direccion }}" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red outline-none transition-all uppercase">
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end">
+                    <button type="submit" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2">
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Propietario (Info) -->
+            <div class="lg:col-span-4">
+                <div class="bg-slate-800 text-white rounded-2xl p-6 shadow-lg h-full relative overflow-hidden">
+                    <!-- Decoración -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-red opacity-10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                    
+                    <div class="relative z-10 text-center mb-6">
+                        <div class="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3 border-4 border-slate-600">
+                            <span class="text-2xl font-bold">{{ local.propietario.first_name|first }}</span>
+                        </div>
+                        <h4 class="font-bold text-lg">{{ local.propietario.first_name }}</h4>
+                        <span class="px-2 py-0.5 rounded bg-brand-red text-[10px] font-bold uppercase tracking-wider">Propietario</span>
+                    </div>
+
+                    <div class="space-y-4 relative z-10">
+                        <div class="flex justify-between border-b border-slate-700 pb-2">
+                            <span class="text-slate-400 text-sm">RUC Personal</span>
+                            <span class="font-mono text-sm">{{ local.propietario.perfil.ruc }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-700 pb-2">
+                            <span class="text-slate-400 text-sm">Teléfono</span>
+                            <span class="text-sm">{{ local.propietario.perfil.telefono|default:"--" }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-700 pb-2">
+                            <span class="text-slate-400 text-sm">Usuario</span>
+                            <span class="text-sm">{{ local.propietario.username }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. PESTAÑA: MAPA -->
+        <div id="content-mapa" class="hidden">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden">
+                
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <h6 class="text-slate-800 font-bold text-sm flex items-center gap-2">
+                            <i class="bi bi-pin-map-fill text-red-600"></i> Geolocalización
+                        </h6>
+                        {% if local.ubicacion %}
+                            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold border border-emerald-200">Confirmada</span>
+                        {% else %}
+                            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200 animate-pulse">Pendiente</span>
+                        {% endif %}
+                    </div>
+                    
+                    <button onclick="document.forms[0].submit()" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline">
+                        Guardar Ubicación Nueva
+                    </button>
+                </div>
+
+                <div class="relative h-[500px] w-full bg-slate-100">
+                    <div id="map" class="w-full h-full z-0"></div>
+                    
+                    <!-- Overlay si no hay ubicación -->
+                    {% if not local.ubicacion %}
+                    <div id="map-overlay" class="absolute inset-0 bg-slate-900/80 z-10 flex items-center justify-center backdrop-blur-sm">
+                        <div class="bg-white p-8 rounded-2xl text-center shadow-2xl max-w-sm mx-4">
+                            <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-500">
+                                <i class="bi bi-geo-alt-slash fs-1"></i>
+                            </div>
+                            <h4 class="text-xl font-bold text-slate-800 mb-2">Ubicación No Definida</h4>
+                            <p class="text-slate-500 text-sm mb-6">El propietario aún no ha fijado el pin. Puede hacerlo usted manualmente ahora.</p>
+                            <button type="button" onclick="activarMapaManual()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-amber-500/30">
+                                <i class="bi bi-crosshair me-2"></i> Fijar Manualmente
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Inputs Ocultos -->
+                <input type="hidden" name="latitud" id="lat" value="{{ local.ubicacion.y|unlocalize }}">
+                <input type="hidden" name="longitud" id="lng" value="{{ local.ubicacion.x|unlocalize }}">
+            </div>
+        </div>
+
+        <!-- 3. PESTAÑA: HISTORIAL -->
+        <div id="content-historial" class="hidden">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 class="text-slate-800 font-bold text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="bi bi-clock-history text-slate-400"></i> Registro Histórico
+                    </h3>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+                            <tr>
+                                <th class="px-6 py-3">Fecha</th>
+                                <th class="px-6 py-3">Estado</th>
+                                <th class="px-6 py-3">Notas</th>
+                                <th class="px-6 py-3 text-right">Inspector</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for turno in historial %}
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-slate-700">{{ turno.agenda.fecha|date:"d/m/Y" }}</div>
+                                    <div class="text-xs text-slate-400">{{ turno.get_bloque_display }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if turno.estado == 'CONFIRMADO' %}
+                                        <span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-xs font-bold border border-emerald-100">APROBADO</span>
+                                    {% elif turno.estado == 'PENDIENTE' %}
+                                        <span class="px-2 py-1 rounded bg-amber-50 text-amber-600 text-xs font-bold border border-amber-100">EN REVISIÓN</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 rounded bg-red-50 text-red-600 text-xs font-bold border border-red-100">RECHAZADO</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if turno.referencia_ubicacion %}
+                                        <div class="flex items-center gap-1 text-xs text-blue-500 mb-1"><i class="bi bi-pin-map"></i> {{ turno.referencia_ubicacion }}</div>
+                                    {% endif %}
+                                    <div class="text-slate-500 text-xs max-w-xs truncate">{{ turno.observaciones|default:"-" }}</div>
+                                </td>
+                                <td class="px-6 py-4 text-right text-slate-400 text-xs">
+                                    {{ turno.inspector.first_name|default:"--" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-16 text-center text-slate-400">
+                                    <i class="bi bi-folder-x text-2xl block mb-2 opacity-50"></i>
+                                    No hay historial registrado.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<style>
+    /* Estilos para el Tab Activo */
+    .active-tab {
+        background-color: #1E293B; /* Slate 800 */
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // --- SISTEMA DE PESTAÑAS ---
+    function switchTab(tabName) {
+        // Botones
+        const tabs = ['datos', 'mapa', 'historial'];
+        
+        tabs.forEach(t => {
+            const btn = document.getElementById(t + '-tab');
+            const content = document.getElementById('content-' + t);
+            
+            if (t === tabName) {
+                // Activar
+                btn.className = "flex-1 px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 active-tab";
+                content.classList.remove('hidden');
+                
+                // Si es mapa, refrescar Leaflet
+                if (t === 'mapa') {
+                    setTimeout(() => { map.invalidateSize(); }, 100);
+                }
+            } else {
+                // Desactivar
+                btn.className = "flex-1 px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-50";
+                content.classList.add('hidden');
+            }
+        });
+    }
+
+    // --- MAPA ---
+    const defaultLat = 0.8119;
+    const defaultLng = -77.7173;
+    
+    let localLatStr = "{{ local.ubicacion.y|stringformat:'.8f'|default:'' }}";
+    let localLngStr = "{{ local.ubicacion.x|stringformat:'.8f'|default:'' }}";
+    let hasLocation = (localLatStr !== "" && localLngStr !== "" && localLatStr !== "0.00000000");
+    
+    let lat = hasLocation ? parseFloat(localLatStr) : defaultLat;
+    let lng = hasLocation ? parseFloat(localLngStr) : defaultLng;
+
+    var map = L.map('map').setView([lat, lng], hasLocation ? 17 : 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+
+    var marker;
+    if (hasLocation) {
+        marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+        marker.on('dragend', function(e) { actualizarInputs(e.target.getLatLng()); });
+    }
+
+    function activarMapaManual() {
+        document.getElementById('map-overlay').style.display = 'none';
+        let center = map.getCenter();
+        if (!marker) {
+            marker = L.marker(center, {draggable: true}).addTo(map);
+            actualizarInputs(center);
+            marker.on('dragend', function(e) { actualizarInputs(e.target.getLatLng()); });
+        }
+    }
+
+    map.on('click', function(e) {
+        if (document.getElementById('map-overlay') && document.getElementById('map-overlay').style.display !== 'none') return;
+        if (marker) marker.setLatLng(e.latlng);
+        else marker = L.marker(e.latlng, {draggable: true}).addTo(map);
+        actualizarInputs(e.latlng);
+    });
+
+    function actualizarInputs(latlng) {
+        document.getElementById('lat').value = latlng.lat.toFixed(8);
+        document.getElementById('lng').value = latlng.lng.toFixed(8);
+    }
+    
+    // Forzar Mayúsculas
+    document.querySelectorAll('input[type="text"]').forEach(el => {
+        el.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+    });
+</script>
+{% endblock %}

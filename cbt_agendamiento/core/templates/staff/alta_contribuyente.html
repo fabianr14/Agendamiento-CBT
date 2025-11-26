@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo Registro - CBT{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<div class="max-w-4xl mx-auto">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex items-center mb-8 pb-4 border-b border-slate-200">
+        <a href="{% url 'dashboard_staff' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-red-600 font-bold text-xs tracking-widest uppercase mb-0.5">Gestión de Contribuyentes</h6>
+            <h2 class="text-2xl font-bold text-slate-800">Nuevo Registro</h2>
+        </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden">
+        <form method="POST" id="formAlta" autocomplete="off">
+            {% csrf_token %}
+            
+            <!-- SECCIÓN 1: PROPIETARIO -->
+            <div class="p-8 bg-slate-50/80 border-b border-slate-200">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800 text-white flex items-center justify-center font-bold text-sm shadow-sm">1</div>
+                        <h3 class="text-lg font-bold text-slate-800">Datos del Propietario</h3>
+                    </div>
+                    <!-- Badge de Estado -->
+                    <span id="status-badge" class="hidden px-3 py-1 rounded-full text-xs font-bold border transition-all"></span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <!-- CÉDULA -->
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Cédula de Identidad</label>
+                        <div class="relative group">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-brand-red"><i class="bi bi-card-heading"></i></span>
+                            {{ form.cedula }}
+                            <!-- Spinner -->
+                            <div id="spinner-cedula" class="absolute inset-y-0 right-0 pr-3 flex items-center hidden">
+                                <div class="animate-spin h-4 w-4 border-2 border-brand-red border-t-transparent rounded-full"></div>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1 ml-1">Ingrese 10 dígitos para validar.</p>
+                    </div>
+                    
+                    <!-- NOMBRES -->
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nombres</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-person"></i></span>
+                            {{ form.first_name }}
+                        </div>
+                    </div>
+
+                    <!-- APELLIDOS -->
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Apellidos</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-person"></i></span>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <!-- RUC -->
+                    <div class="md:col-span-12">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">RUC Personal</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-postcard"></i></span>
+                            {{ form.ruc_propietario }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LISTA DE LOCALES EXISTENTES (RESTAURADA) -->
+                <div id="locales-existentes-container" class="hidden mt-6 pt-6 border-t border-slate-200">
+                    <h6 class="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                        <i class="bi bi-shop text-slate-500"></i> Locales ya registrados
+                    </h6>
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <ul id="lista-locales" class="divide-y divide-slate-100 text-sm text-slate-600">
+                            <!-- Se llena vía JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: ESTABLECIMIENTO -->
+            <div class="p-8 transition-opacity duration-300 opacity-50" id="section-local">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm shadow-sm border border-slate-300">2</div>
+                    <h3 class="text-lg font-bold text-slate-800">Información del Nuevo Local</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nombre Comercial (Letrero)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-shop-window"></i></span>
+                            {{ form.nombre_comercial }}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Razón Social</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-briefcase"></i></span>
+                            {{ form.razon_social }}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Giro de Negocio</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-tag"></i></span>
+                            {{ form.tipo }}
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Parroquia / Sector</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-map"></i></span>
+                            {{ form.parroquia }}
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Dirección (Calles)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-signpost-2"></i></span>
+                            {{ form.direccion }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3 mb-6">
+                    <i class="bi bi-info-circle-fill text-blue-500 text-lg mt-0.5"></i>
+                    <div>
+                        <h6 class="text-sm font-bold text-blue-800">Geolocalización Diferida</h6>
+                        <p class="text-xs text-blue-600 mt-0.5">El usuario completará el mapa al ingresar.</p>
+                    </div>
+                </div>
+
+                <!-- Campos Ocultos -->
+                {{ form.latitud }}
+                {{ form.longitud }}
+
+                <div class="flex justify-end pt-4 border-t border-slate-100">
+                    <button type="submit" class="px-8 py-3 bg-slate-300 text-white font-bold rounded-xl transition-all cursor-not-allowed" disabled id="btnGuardar">
+                        Guardar Registro
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-control, .form-select {
+        width: 100%; background-color: #FFFFFF; border: 1px solid #E2E8F0; color: #1E293B;
+        border-radius: 0.75rem; padding-left: 2.5rem; padding-top: 0.6rem; padding-bottom: 0.6rem; font-size: 0.9rem; transition: all 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--cbt-red); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); outline: none;
+    }
+    .form-control:disabled { background-color: #F8FAFC; color: #94A3B8; cursor: not-allowed; }
+    .input-valid { background-color: #ECFDF5 !important; border-color: #10B981 !important; color: #065F46 !important; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputCedula = document.querySelector('input[name="cedula"]');
+        const btnGuardar = document.getElementById('btnGuardar');
+        
+        const inputFirst = document.querySelector('input[name="first_name"]');
+        const inputLast = document.querySelector('input[name="last_name"]');
+        const inputRuc = document.querySelector('input[name="ruc_propietario"]');
+        
+        const sectionLocal = document.getElementById('section-local');
+        const statusBadge = document.getElementById('status-badge');
+        const spinner = document.getElementById('spinner-cedula');
+        const localesContainer = document.getElementById('locales-existentes-container');
+        const listaLocales = document.getElementById('lista-locales');
+
+        const inputsLocal = sectionLocal.querySelectorAll('input, select');
+
+        function bloquear() {
+            inputFirst.value = ''; inputFirst.disabled = true;
+            inputLast.value = ''; inputLast.disabled = true;
+            inputRuc.value = ''; inputRuc.disabled = true;
+            
+            inputFirst.classList.remove('input-valid'); 
+            inputLast.classList.remove('input-valid'); 
+            inputRuc.classList.remove('input-valid');
+            
+            sectionLocal.classList.add('opacity-50');
+            inputsLocal.forEach(el => { el.disabled = true; el.value = ''; });
+            
+            btnGuardar.disabled = true;
+            btnGuardar.className = "px-8 py-3 bg-slate-300 text-white font-bold rounded-xl transition-all cursor-not-allowed";
+            statusBadge.classList.add('hidden');
+            
+            localesContainer.classList.add('hidden');
+            listaLocales.innerHTML = '';
+        }
+
+        function activar(data, esExistente) {
+            sectionLocal.classList.remove('opacity-50');
+            inputsLocal.forEach(el => el.disabled = false);
+            
+            btnGuardar.disabled = false;
+            btnGuardar.className = "px-8 py-3 bg-brand-red hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all transform active:scale-95";
+            btnGuardar.innerHTML = '<i class="bi bi-save2 mr-2"></i> Guardar Registro';
+            
+            statusBadge.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-700', 'border-emerald-200', 'bg-blue-100', 'text-blue-700', 'border-blue-200');
+
+            if (esExistente) {
+                // FIX: Usamos las nuevas claves del JSON (first_name / last_name)
+                inputFirst.value = data.first_name; 
+                inputLast.value = data.last_name;
+                inputRuc.value = data.ruc;
+                
+                inputFirst.disabled = false; inputFirst.readOnly = true;
+                inputLast.disabled = false; inputLast.readOnly = true;
+                inputRuc.disabled = false; inputRuc.readOnly = true;
+                
+                inputFirst.classList.add('input-valid'); 
+                inputLast.classList.add('input-valid');
+                inputRuc.classList.add('input-valid');
+
+                statusBadge.innerText = "USUARIO REGISTRADO";
+                statusBadge.classList.add('bg-emerald-100', 'text-emerald-700', 'border', 'border-emerald-200');
+
+                // MOSTRAR LOCALES
+                if (data.locales && data.locales.length > 0) {
+                    let html = '';
+                    data.locales.forEach(loc => {
+                        html += `
+                        <li class="px-4 py-3 flex items-center justify-between hover:bg-slate-50">
+                            <div>
+                                <span class="block font-bold text-slate-700 text-xs">${loc.nombre_comercial}</span>
+                                <span class="text-[10px] text-slate-400">${loc.direccion}</span>
+                            </div>
+                            <span class="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-500 border border-slate-200">${loc.parroquia}</span>
+                        </li>`;
+                    });
+                    listaLocales.innerHTML = html;
+                    localesContainer.classList.remove('hidden');
+                }
+
+            } else {
+                inputFirst.disabled = false; inputFirst.readOnly = false;
+                inputLast.disabled = false; inputLast.readOnly = false;
+                inputRuc.disabled = false; inputRuc.readOnly = false;
+                
+                inputFirst.classList.remove('input-valid'); 
+                inputLast.classList.remove('input-valid');
+                inputRuc.classList.remove('input-valid');
+                inputFirst.focus();
+                
+                statusBadge.innerText = "USUARIO NUEVO";
+                statusBadge.classList.add('bg-blue-100', 'text-blue-700', 'border', 'border-blue-200');
+            }
+        }
+
+        bloquear();
+
+        inputCedula.addEventListener('input', function() {
+            const cedula = this.value.trim();
+            if (cedula.length < 10) { bloquear(); return; }
+            if (cedula.length === 10) {
+                spinner.classList.remove('hidden');
+                fetch(`/api/buscar-propietario/?cedula=${cedula}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        spinner.classList.add('hidden');
+                        activar(data, data.existe);
+                    })
+                    .catch(err => { console.error(err); spinner.classList.add('hidden'); });
+            }
+        });
+
+        document.querySelectorAll('input[type="text"]').forEach(el => {
+            el.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+        });
+    });
+</script>
+{% endblock %}

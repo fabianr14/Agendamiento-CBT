@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% block title %}Comando Central - CBT{% endblock %}
+{% block header_title %}Resumen Operativo{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="max-w-7xl mx-auto space-y-8">
+
+    <!-- 1. FILA DE INDICADORES (KPIs) -->
+    <!-- Grid adaptable: 1 columna en móvil, 2 en tablet, 4 en desktop -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        
+        <!-- Pendientes -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-apple hover:shadow-apple-hover hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-default">
+            <div class="absolute -right-6 -top-6 text-amber-50 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
+                <i class="bi bi-inbox-fill text-[8rem]"></i>
+            </div>
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl shadow-sm group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+                        <i class="bi bi-hourglass-split text-xl"></i>
+                    </div>
+                    {% if stats.pendientes > 0 %}
+                    <span class="flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    {% endif %}
+                </div>
+                <div>
+                    <span class="block text-4xl font-black text-slate-800 tracking-tight">{{ stats.pendientes }}</span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Por Revisar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmados -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-apple hover:shadow-apple-hover hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-default">
+            <div class="absolute -right-6 -top-6 text-emerald-500/10 group-hover:text-emerald-500/20 transition-colors duration-500 transform group-hover:scale-110 group-hover:rotate-12">
+                <i class="bi bi-check-circle-fill text-[8rem]"></i>
+            </div>
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shadow-sm group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
+                        <i class="bi bi-clipboard-check text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <span class="block text-4xl font-black text-slate-800 tracking-tight">{{ stats.confirmados }}</span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Listos para Visita</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agenda Hoy -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-apple hover:shadow-apple-hover hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-default">
+            <div class="absolute -right-6 -top-6 text-red-500/10 group-hover:text-red-500/20 transition-colors duration-500 transform group-hover:scale-110 group-hover:rotate-12">
+                <i class="bi bi-calendar-event-fill text-[8rem]"></i>
+            </div>
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-red-50 text-brand-red rounded-2xl shadow-sm group-hover:bg-brand-red group-hover:text-white transition-colors duration-300">
+                        <i class="bi bi-calendar-day text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <span class="block text-4xl font-black text-slate-800 tracking-tight">{{ kpi_hoy }}</span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Agenda de Hoy</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Base Total -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-apple hover:shadow-apple-hover hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-default">
+            <div class="absolute -right-6 -top-6 text-blue-500/10 group-hover:text-blue-500/20 transition-colors duration-500 transform group-hover:scale-110 group-hover:rotate-12">
+                <i class="bi bi-shop text-[8rem]"></i>
+            </div>
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
+                        <i class="bi bi-building text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <span class="block text-4xl font-black text-slate-800 tracking-tight">{{ kpi_locales }}</span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Locales</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ÁREA DE GESTIÓN (GRID RESPONSIVE) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- COLUMNA IZQUIERDA (2/3): TABLA DE SOLICITUDES -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Bandeja de Entrada -->
+            <div class="bg-white border border-slate-200 rounded-3xl shadow-apple overflow-hidden flex flex-col min-h-[600px]">
+                <div class="px-6 md:px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/80 backdrop-blur-md sticky top-0 z-20 gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-3">
+                            <span class="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800 text-white shadow-lg shadow-slate-500/20"><i class="bi bi-inbox"></i></span>
+                            Solicitudes
+                        </h3>
+                        <p class="text-slate-400 text-xs mt-1 ml-0 sm:ml-14 font-medium">Prioridad por fecha</p>
+                    </div>
+                    {% if stats.pendientes > 0 %}
+                        <a href="{% url 'solicitudes_pendientes' %}" class="w-full sm:w-auto text-center px-4 py-1.5 bg-red-50 text-brand-red text-[11px] font-bold rounded-full border border-red-100 hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                            {{ stats.pendientes }} Nuevas <i class="bi bi-arrow-right"></i>
+                        </a>
+                    {% else %}
+                         <span class="px-4 py-1.5 bg-slate-50 text-slate-400 text-[11px] font-bold rounded-full border border-slate-100 flex items-center gap-1"><i class="bi bi-check2"></i> Al día</span>
+                    {% endif %}
+                </div>
+                
+                <div class="overflow-y-auto flex-1 custom-scrollbar p-3 bg-slate-50/30">
+                    <table class="w-full text-left text-sm border-separate border-spacing-y-3">
+                        <!-- Header oculto en móvil -->
+                        <thead class="text-slate-400 hidden md:table-header-group">
+                            <tr>
+                                <th class="px-5 py-2 font-bold uppercase text-[10px] tracking-wider rounded-l-xl">Fecha</th>
+                                <th class="px-5 py-2 font-bold uppercase text-[10px] tracking-wider">Local / Propietario</th>
+                                <th class="px-5 py-2 font-bold uppercase text-[10px] tracking-wider">Zona</th>
+                                <th class="px-5 py-2 font-bold uppercase text-[10px] tracking-wider text-right rounded-r-xl">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="block md:table-row-group space-y-4 md:space-y-0">
+                            {% for turno in lista_pendientes %}
+                            <!-- Fila Responsiva: Block en móvil, Table-row en Desktop -->
+                            <tr class="bg-white shadow-sm hover:shadow-md transition-all group rounded-2xl md:rounded-xl border border-slate-100 hover:border-slate-200 relative overflow-hidden flex flex-col md:table-row p-4 md:p-0">
+                                
+                                <!-- Borde lateral color en móvil -->
+                                <td class="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-red md:hidden"></td>
+
+                                <!-- 1. FECHA -->
+                                <td class="px-5 py-2 md:py-4 rounded-l-xl md:table-cell block">
+                                    <div class="flex items-center gap-4">
+                                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center min-w-[55px] shadow-sm group-hover:border-red-200 group-hover:bg-red-50 transition-colors">
+                                            <span class="block text-xl font-black text-slate-800 leading-none group-hover:text-brand-red">{{ turno.agenda.fecha|date:"d" }}</span>
+                                            <span class="block text-[0.6rem] text-slate-400 uppercase font-bold group-hover:text-red-400 tracking-wide">{{ turno.agenda.fecha|date:"M" }}</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-xs font-bold text-slate-700">{{ turno.get_bloque_display }}</span>
+                                            {% if turno.agenda.fecha == hoy %}
+                                                <span class="text-[9px] text-red-500 font-bold uppercase animate-pulse">¡Es Hoy!</span>
+                                            {% else %}
+                                                <span class="text-[9px] text-slate-400 font-medium">{{ turno.agenda.fecha|timeuntil:hoy }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- 2. LOCAL -->
+                                <td class="px-5 py-2 md:py-4 md:table-cell block border-t md:border-t-0 border-slate-50 mt-2 md:mt-0 pt-3 md:pt-4">
+                                    <div class="font-bold text-slate-800 text-sm truncate md:max-w-[180px]" title="{{ turno.establecimiento.nombre_comercial }}">{{ turno.establecimiento.nombre_comercial }}</div>
+                                    <div class="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
+                                        <div class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 hidden md:flex">{{ turno.establecimiento.propietario.first_name|first }}</div>
+                                        <i class="bi bi-person text-slate-400 md:hidden"></i>
+                                        {{ turno.establecimiento.propietario.first_name }}
+                                    </div>
+                                </td>
+
+                                <!-- 3. ZONA -->
+                                <td class="px-5 py-2 md:py-4 md:table-cell block">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                        {{ turno.establecimiento.get_parroquia_display|slice:":15" }}
+                                    </span>
+                                </td>
+
+                                <!-- 4. ACCIONES -->
+                                <td class="px-5 py-4 text-right rounded-r-xl md:table-cell block border-t md:border-t-0 border-slate-50 mt-2 md:mt-0">
+                                    <div class="flex justify-end gap-2 w-full md:w-auto">
+                                        <a href="{% url 'gestionar_turno' turno.id 'rechazar' %}" class="flex-1 md:flex-none w-full md:w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:border-red-200 hover:bg-red-50 hover:text-red-500 transition-all shadow-sm" title="Rechazar">
+                                            <i class="bi bi-x-lg text-lg"></i>
+                                        </a>
+                                        <a href="{% url 'gestionar_turno' turno.id 'confirmar' %}" class="flex-1 md:flex-none w-full md:w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm" title="Aprobar">
+                                            <i class="bi bi-check-lg text-lg"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-32 text-center">
+                                    <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-inner">
+                                        <i class="bi bi-inbox text-5xl"></i>
+                                    </div>
+                                    <h3 class="text-slate-800 font-bold text-base">Bandeja limpia</h3>
+                                    <p class="text-slate-400 text-xs mt-1">No hay solicitudes pendientes.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINACIÓN -->
+                {% if lista_pendientes.has_other_pages %}
+                <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">
+                        Pág. {{ lista_pendientes.number }}
+                    </span>
+                    <div class="flex gap-2">
+                        {% if lista_pendientes.has_previous %}
+                        <a href="?page={{ lista_pendientes.previous_page_number }}" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-brand-red transition-colors"><i class="bi bi-chevron-left"></i></a>
+                        {% endif %}
+                        {% if lista_pendientes.has_next %}
+                        <a href="?page={{ lista_pendientes.next_page_number }}" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-brand-red transition-colors"><i class="bi bi-chevron-right"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Gráfica de Rendimiento -->
+            <div class="bg-white border border-slate-200 rounded-3xl shadow-apple p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 bg-brand-red opacity-[0.02] rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex justify-between items-center mb-6 relative z-10">
+                    <div>
+                        <h6 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Métricas</h6>
+                        <h4 class="text-lg font-bold text-slate-800">Efectividad Global</h4>
+                    </div>
+                    <a href="{% url 'estadisticas_globales' %}" class="text-[10px] font-bold text-brand-red bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">Ver Detalles</a>
+                </div>
+                <div class="relative h-40 w-full">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA (1/3): HERRAMIENTAS -->
+        <div class="space-y-6">
+            
+            <!-- Tarjeta de Ruta -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden text-white group">
+                <div class="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-brand-red opacity-20 rounded-full blur-3xl group-hover:opacity-30 transition-opacity duration-500"></div>
+                
+                <div class="flex items-center gap-3 mb-6 relative z-10">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-brand-red border border-white/10 shadow-lg mb-2">
+                        <i class="bi bi-map-fill text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">Hoja de Ruta</h3>
+                        <p class="text-xs text-slate-400">Planificación Táctica</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 relative z-10">
+                    <form action="{% url 'hoja_ruta' %}" method="get">
+                        <input type="hidden" name="zona" value="NORTE">
+                        <button class="w-full flex items-center justify-between px-5 py-3.5 bg-brand-red hover:bg-red-600 text-white rounded-2xl shadow-lg shadow-red-900/40 transition-all group border border-transparent transform hover:-translate-y-0.5 active:scale-95">
+                            <span class="font-bold text-sm">Zona Norte</span>
+                            <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                        </button>
+                    </form>
+                    <form action="{% url 'hoja_ruta' %}" method="get">
+                        <input type="hidden" name="zona" value="SUR">
+                        <button class="w-full flex items-center justify-between px-5 py-3.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-sm font-medium text-white transition-all group backdrop-blur-sm transform hover:-translate-y-0.5 active:scale-95">
+                            <span>Zona Sur</span>
+                            <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform text-white/50 group-hover:text-white"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Agenda Lista (Timeline con Lógica CHECK-IN) -->
+            <div class="bg-white border border-slate-200 rounded-3xl shadow-apple overflow-hidden flex flex-col h-[500px]">
+                <div class="px-6 py-5 border-b border-slate-100 bg-white sticky top-0 z-10 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="bi bi-clipboard-check text-emerald-500"></i> Agenda Lista
+                    </h3>
+                    <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-100">{{ lista_proximos|length }}</span>
+                </div>
+                
+                <div class="overflow-y-auto flex-1 custom-scrollbar p-5 space-y-6 bg-slate-50/30">
+                    {% for turno in lista_proximos %}
+                    
+                    <!-- CASO A: YA VISITADO (Esperando Papel) -->
+                    {% if turno.estado == 'EJECUTADA' %}
+                    <div class="relative pl-4 border-l-2 border-blue-400 transition-colors group">
+                        <!-- Punto Azul -->
+                        <div class="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100 border-2 border-white"></div>
+                        
+                        <div class="pl-2">
+                            <div class="bg-blue-50/60 rounded-xl p-3 border border-blue-100 mb-1 hover:bg-blue-100/50 transition-colors">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-wider">Pendiente Informe</span>
+                                    <span class="text-[10px] font-mono text-slate-400">{{ turno.agenda.fecha|date:"d/m" }}</span>
+                                </div>
+                                <div class="font-bold text-slate-800 text-sm mb-2 leading-tight truncate">{{ turno.establecimiento.nombre_comercial }}</div>
+                                
+                                <!-- Formulario Cierre Final -->
+                                <form action="{% url 'finalizar_turno' turno.id %}" method="POST" class="flex gap-2">
+                                    {% csrf_token %}
+                                    <div class="relative flex-1">
+                                        <i class="bi bi-hash absolute left-2 top-1/2 -translate-y-1/2 text-blue-300 text-[10px]"></i>
+                                        <input type="text" name="numero_formulario" class="w-full bg-white border border-blue-200 rounded-lg pl-6 pr-2 py-1.5 text-xs text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm placeholder-slate-300" placeholder="N° Form" required autocomplete="off">
+                                    </div>
+                                    <button type="submit" class="w-8 h-8 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95">
+                                        <i class="bi bi-save"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CASO B: EN RUTA (Verde) -->
+                    {% else %}
+                    <div class="relative pl-4 border-l-2 border-slate-200 hover:border-emerald-400 transition-colors group pb-1">
+                        <div class="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-slate-300 group-hover:bg-emerald-500 border-2 border-white transition-colors shadow-sm"></div>
+                        
+                        <div class="pl-2">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-sm group-hover:border-emerald-100 group-hover:text-emerald-600 transition-colors">{{ turno.agenda.fecha|date:"d M" }} • {{ turno.get_bloque_display|slice:":1" }}</span>
+                            </div>
+                            
+                            <div class="font-bold text-slate-800 text-sm mb-2 leading-tight">{{ turno.establecimiento.nombre_comercial }}</div>
+                            
+                            <!-- Acciones de Campo (Solo hoy/antes) -->
+                            <div class="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                {% if turno.agenda.fecha <= hoy %}
+                                    <form action="{% url 'marcar_ejecutada' turno.id %}" method="POST" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-600 hover:text-white rounded-lg text-[10px] font-bold transition-all shadow-sm flex items-center justify-center gap-1">
+                                            <i class="bi bi-geo-fill"></i> Check-in
+                                        </button>
+                                    </form>
+                                    
+                                    <form action="{% url 'reportar_ausencia' turno.id %}" method="POST" onsubmit="return confirm('¿Reportar Cliente Ausente?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-8 h-full bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-300 rounded-lg flex items-center justify-center transition-all shadow-sm" title="Ausente">
+                                            <i class="bi bi-shop-window"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-[10px] text-slate-400 italic bg-slate-50 px-2 py-1 rounded">Programado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% empty %}
+                    <div class="h-full flex flex-col items-center justify-center text-center opacity-50 pt-10">
+                        <i class="bi bi-calendar2-check text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-xs text-slate-400 font-medium">Sin inspecciones<br>pendientes de cierre.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pendientes', 'OK', 'No'],
+            datasets: [{
+                data: [{{ stats.pendientes }}, {{ stats.confirmados }}, {{ stats.rechazados }}],
+                backgroundColor: ['#F59E0B', '#10B981', '#EF4444'],
+                borderColor: '#ffffff',
+                borderWidth: 4,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { usePointStyle: true, font: { size: 10, family: 'Inter' }, color: '#64748b' } } },
+            layout: { padding: 0 },
+            cutout: '75%'
+        }
+    });
+</script>
+{% endblock %}

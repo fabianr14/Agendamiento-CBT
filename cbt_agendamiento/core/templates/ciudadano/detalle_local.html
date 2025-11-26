@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load l10n static %}
+{% block title %}Detalle Local - CBT{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<div class="max-w-5xl mx-auto">
+    
+    <!-- ENCABEZADO DE NAVEGACIÓN -->
+    <div class="flex items-center mb-8 pb-4 border-b border-slate-200">
+        <a href="{% url 'home_ciudadano' %}" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-red hover:border-brand-red hover:bg-red-50 flex items-center justify-center transition-all mr-4 shadow-sm">
+            <i class="bi bi-arrow-left text-lg"></i>
+        </a>
+        <div>
+            <h6 class="text-blue-600 font-bold text-xs tracking-widest uppercase mb-0.5">Mis Propiedades</h6>
+            <h2 class="text-2xl font-bold text-slate-800">{{ local.nombre_comercial }}</h2>
+        </div>
+    </div>
+
+    <!-- AVISO DE SOLO LECTURA -->
+    <div class="mb-8 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+        <div class="p-2 bg-blue-100 text-blue-600 rounded-full">
+            <i class="bi bi-shield-lock-fill text-lg"></i>
+        </div>
+        <div>
+            <h6 class="text-sm font-bold text-blue-800">Registro Oficial Protegido</h6>
+            <p class="text-xs text-blue-700 mt-0.5 leading-relaxed">
+                Estos datos son la referencia legal para sus trámites. Si detecta algún error en la dirección o razón social, por favor acuda a las oficinas del Cuerpo de Bomberos para solicitar una actualización.
+            </p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- COLUMNA IZQUIERDA: FICHA TÉCNICA -->
+        <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Tarjeta Principal -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden">
+                
+                <!-- Mapa (Cabecera Visual) -->
+                <div class="relative h-56 w-full bg-slate-100 border-b border-slate-100">
+                    <div id="map-readonly" class="w-full h-full z-0"></div>
+                    <!-- Etiqueta flotante -->
+                    <div class="absolute bottom-3 left-3 z-[400] bg-white/90 backdrop-blur px-3 py-1 rounded-lg shadow-sm border border-slate-200 text-xs font-bold text-slate-600 flex items-center gap-2">
+                        <i class="bi bi-pin-map-fill text-red-500"></i> Ubicación Registrada
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">
+                        Datos del Contribuyente
+                    </h3>
+                    
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex justify-between items-center">
+                            <span class="text-slate-500">RUC</span>
+                            <span class="font-mono font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{{ local.propietario.perfil.ruc }}</span>
+                        </li>
+                        <li class="flex justify-between items-start">
+                            <span class="text-slate-500 shrink-0">Razón Social</span>
+                            <span class="font-medium text-slate-800 text-right">{{ local.razon_social }}</span>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-slate-500">Giro</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-bold border border-slate-200">{{ local.tipo.nombre }}</span>
+                        </li>
+                        <li class="pt-2 border-t border-slate-50">
+                            <span class="block text-slate-500 mb-1 text-xs uppercase font-bold">Dirección Exacta</span>
+                            <div class="flex items-start gap-2 text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <i class="bi bi-geo-alt text-red-500 mt-0.5"></i>
+                                <span>{{ local.direccion }}</span>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100">
+                        <a href="{% url 'agendar_turno' %}?local_id={{ local.id }}" class="flex items-center justify-center gap-2 w-full py-3 bg-brand-red hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all transform active:scale-95">
+                            <i class="bi bi-calendar-plus"></i> Solicitar Inspección
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: HISTORIAL -->
+        <div class="lg:col-span-7">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-apple overflow-hidden flex flex-col h-full min-h-[500px]">
+                <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                        <i class="bi bi-clock-history text-blue-500"></i> Historial de Inspecciones
+                    </h3>
+                    <span class="bg-white border border-slate-200 text-slate-500 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">{{ historial|length }}</span>
+                </div>
+                
+                <div class="overflow-y-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 sticky top-0 z-10 shadow-sm border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider">Fecha</th>
+                                <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider text-center">Estado</th>
+                                <th class="px-6 py-3 font-semibold uppercase text-xs tracking-wider text-right">Notas / Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for turno in historial %}
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-bold text-slate-700">{{ turno.agenda.fecha|date:"d/m/Y" }}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5">{{ turno.get_bloque_display }}</div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    {% if turno.estado == 'CONFIRMADO' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                            APROBADO
+                                        </span>
+                                    {% elif turno.estado == 'PENDIENTE' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
+                                            EN REVISIÓN
+                                        </span>
+                                    {% elif turno.estado == 'RECHAZADO' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                                            RECHAZADO
+                                        </span>
+                                    {% elif turno.estado == 'TERMINADO' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                            FINALIZADO
+                                        </span>
+                                    {% elif turno.estado == 'CANCELADO' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                            CANCELADO
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="text-xs text-slate-500 italic max-w-xs ml-auto truncate">
+                                        {{ turno.motivo_cancelacion|default:turno.observaciones|default:"Sin observaciones" }}
+                                    </div>
+                                    {% if turno.numero_formulario %}
+                                        <div class="text-[10px] font-mono font-bold text-slate-700 mt-1 bg-slate-100 px-1 rounded inline-block">
+                                            Form: {{ turno.numero_formulario }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="px-6 py-16 text-center text-slate-400">
+                                    <i class="bi bi-folder2-open text-2xl block mb-2 opacity-50"></i>
+                                    <p class="text-xs">No existe historial de inspecciones para este local.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- SCRIPT MAPA -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    {% if local.ubicacion %}
+        // Usamos unlocalize para evitar conflictos de coma decimal
+        const lat = {{ local.ubicacion.y|unlocalize }};
+        const lng = {{ local.ubicacion.x|unlocalize }};
+
+        var map = L.map('map-readonly', {
+            zoomControl: false,     // Mapa estático limpio
+            scrollWheelZoom: false,
+            dragging: false,
+            doubleClickZoom: false,
+            boxZoom: false,
+            attributionControl: false
+        }).setView([lat, lng], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Pin Rojo Institucional
+        var redIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+
+        L.marker([lat, lng], {icon: redIcon}).addTo(map);
+    {% endif %}
+</script>
+{% endblock %}
