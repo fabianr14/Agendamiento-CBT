@@ -1,0 +1,35 @@
+# Usamos Python 3.10 completo (base Debian) para máxima compatibilidad
+FROM python:3.10
+
+# Optimizaciones de Python
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Instalar librerías del sistema para GeoDjango (Mapas) y utilidades
+RUN apt-get update && apt-get install -y \
+    binutils \
+    libproj-dev \
+    gdal-bin \
+    libgdal-dev \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear carpeta de trabajo
+WORKDIR /app
+
+# Instalar requerimientos
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código
+COPY . /app/
+
+# Recolectar archivos estáticos (CSS/JS/Img) en una sola carpeta
+# Usamos una clave falsa solo para este paso de compilación
+RUN DJANGO_SECRET_KEY=build-only-key python manage.py collectstatic --noinput
+
+# Exponer puerto interno
+EXPOSE 8000
+
+# Comando de arranque: Ejecutar script de entrada + Servidor Gunicorn
+CMD ["/app/entrypoint.sh"]
